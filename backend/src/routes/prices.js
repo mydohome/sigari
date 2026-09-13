@@ -26,9 +26,9 @@ router.get("/autocomplete", async (req, res) => {
   }
 });
 
-// GET /api/prices/search?q=marlboro&categoria=Sigarette&marca=Cohiba&page=1&pageSize=20
+// GET /api/prices/search?q=marlboro&categoria=Sigarette&marca=Cohiba&provenienza=Cuba&page=1&pageSize=20
 router.get("/search", optionalAuth, async (req, res) => {
-  const { q = "", categoria = "", marca = "", page = "1", pageSize = "20" } = req.query;
+  const { q = "", categoria = "", marca = "", provenienza = "", page = "1", pageSize = "20" } = req.query;
 
   const limit = Math.min(parseInt(pageSize, 10) || 20, 100);
   const offset = (Math.max(parseInt(page, 10) || 1, 1) - 1) * limit;
@@ -48,6 +48,10 @@ router.get("/search", optionalAuth, async (req, res) => {
     params.push(categoria.trim());
     conditions.push(`p.categoria = $${params.length}`);
   }
+  if (provenienza.trim()) {
+    params.push(provenienza.trim());
+    conditions.push(`p.provenienza = $${params.length}`);
+  }
 
   const whereClause = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
 
@@ -62,6 +66,7 @@ router.get("/search", optionalAuth, async (req, res) => {
       p.marca,
       p.categoria,
       p.formato,
+      p.provenienza,
       p.pezzi_per_confezione,
       latest.prezzo_confezione,
       latest.prezzo_singolo,
@@ -154,6 +159,19 @@ router.get("/meta/marche", async (_req, res) => {
   } catch (err) {
     console.error("Errore recupero marche:", err);
     res.status(500).json({ error: "Errore nel recupero delle marche." });
+  }
+});
+
+// GET /api/prices/meta/provenienze
+router.get("/meta/provenienze", async (_req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT DISTINCT provenienza FROM products WHERE provenienza IS NOT NULL ORDER BY provenienza ASC`
+    );
+    res.json({ provenienze: rows.map((r) => r.provenienza) });
+  } catch (err) {
+    console.error("Errore recupero provenienze:", err);
+    res.status(500).json({ error: "Errore nel recupero delle provenienze." });
   }
 });
 

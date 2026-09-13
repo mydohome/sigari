@@ -8,7 +8,7 @@ function formatEuro(value) {
 
 // Riepilogo compatto dell'humidor, mostrato in home appena si accede:
 // una vista rapida, il dettaglio completo resta nella scheda Humidor.
-export default function HumidorDashboard({ refreshToken }) {
+export default function HumidorDashboard({ refreshToken, onOpenInventory }) {
   const [stats, setStats] = useState(null);
 
   useEffect(() => {
@@ -23,10 +23,10 @@ export default function HumidorDashboard({ refreshToken }) {
     <div className="dashboard">
       <h2 className="dashboard-title">Il tuo humidor</h2>
       <div className="humidor-stats dashboard-stats">
-        <div className="stat-card">
+        <button type="button" className="stat-card stat-card-link" onClick={onOpenInventory}>
           <span className="stat-value">{stats.totale_in_humidor}</span>
           <span className="stat-label">Sigari in humidor</span>
-        </div>
+        </button>
         <div className="stat-card">
           <span className="stat-value">{formatEuro(stats.valore_in_humidor)}</span>
           <span className="stat-label">Valore in humidor</span>

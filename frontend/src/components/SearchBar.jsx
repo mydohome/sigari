@@ -10,6 +10,9 @@ export default function SearchBar({
   marca,
   setMarca,
   marche,
+  provenienza,
+  setProvenienza,
+  provenienze,
   onSearch,
 }) {
   const [suggerimenti, setSuggerimenti] = useState([]);
@@ -150,6 +153,19 @@ export default function SearchBar({
         {categorie.map((c) => (
           <option key={c} value={c}>
             {c}
+          </option>
+        ))}
+      </select>
+
+      <select
+        value={provenienza}
+        onChange={(e) => setProvenienza(e.target.value)}
+        aria-label="Filtra per provenienza"
+      >
+        <option value="">Tutte le provenienze</option>
+        {provenienze.map((p) => (
+          <option key={p} value={p}>
+            {p}
           </option>
         ))}
       </select>

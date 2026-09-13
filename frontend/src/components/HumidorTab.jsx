@@ -3,7 +3,6 @@ import { fetchHumidorItems, deleteHumidorItem, fetchFumate, undoFumata, fetchHum
 import BarChart from "./BarChart.jsx";
 import HumidorReviewEditor from "./HumidorReviewEditor.jsx";
 import PurchaseModal from "./PurchaseModal.jsx";
-import Modal from "./Modal.jsx";
 
 function formatEuro(value) {
   if (value === null || value === undefined) return "—";
@@ -17,11 +16,19 @@ function formatData(dateStr) {
 
 const MESI = ["Gen", "Feb", "Mar", "Apr", "Mag", "Giu", "Lug", "Ago", "Set", "Ott", "Nov", "Dic"];
 
-function ProductDetailModal({ prodotto, onClose, onChanged }) {
+function ProductDetailPage({ prodotto, onBack, onChanged }) {
   const [itemInModifica, setItemInModifica] = useState(null);
 
   return (
-    <Modal title={`${prodotto.marca}${prodotto.formato ? ` — ${prodotto.formato}` : ""}`} onClose={onClose}>
+    <div className="product-detail-page">
+      <button type="button" className="link-button back-link" onClick={onBack}>
+        ← Torna all'humidor
+      </button>
+      <h2>
+        {prodotto.marca}
+        {prodotto.formato ? ` — ${prodotto.formato}` : ""}
+      </h2>
+
       <HumidorReviewEditor productId={prodotto.product_id} />
 
       <table className="results-table product-lots-table">
@@ -69,7 +76,7 @@ function ProductDetailModal({ prodotto, onClose, onChanged }) {
           onSaved={onChanged}
         />
       )}
-    </Modal>
+    </div>
   );
 }
 
@@ -129,6 +136,16 @@ export default function HumidorTab({ refreshToken }) {
   if (error) return <p className="error-msg">{error}</p>;
 
   const prodottoSelezionato = prodotti.find((p) => p.product_id === prodottoAperto);
+
+  if (prodottoSelezionato) {
+    return (
+      <ProductDetailPage
+        prodotto={prodottoSelezionato}
+        onBack={() => setProdottoAperto(null)}
+        onChanged={loadAll}
+      />
+    );
+  }
 
   return (
     <div className="humidor">
@@ -218,14 +235,6 @@ export default function HumidorTab({ refreshToken }) {
             ))}
           </ul>
         </>
-      )}
-
-      {prodottoSelezionato && (
-        <ProductDetailModal
-          prodotto={prodottoSelezionato}
-          onClose={() => setProdottoAperto(null)}
-          onChanged={loadAll}
-        />
       )}
     </div>
   );

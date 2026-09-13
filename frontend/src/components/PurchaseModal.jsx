@@ -36,6 +36,13 @@ export default function PurchaseModal({ item, onClose, onSaved }) {
   const [avvisoPrezzo, setAvvisoPrezzo] = useState(null);
   const [fatto, setFatto] = useState(false);
 
+  function handleSelectProduct(row) {
+    setProdottoScelto(row);
+    if (row?.prezzo_singolo) {
+      setPrezzo(Number(row.prezzo_singolo).toFixed(2));
+    }
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setErrore(null);
@@ -110,7 +117,7 @@ export default function PurchaseModal({ item, onClose, onSaved }) {
             </strong>
           </p>
         ) : (
-          <ProductPicker selected={prodottoScelto} onSelect={setProdottoScelto} />
+          <ProductPicker selected={prodottoScelto} onSelect={handleSelectProduct} />
         )}
         <div className="humidor-form-row">
           <label>

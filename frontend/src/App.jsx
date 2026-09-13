@@ -7,9 +7,10 @@ import WishlistTab from "./components/WishlistTab.jsx";
 import HumidorTab from "./components/HumidorTab.jsx";
 import HumidorDashboard from "./components/HumidorDashboard.jsx";
 import GlobalActions from "./components/GlobalActions.jsx";
+import SettingsTab from "./components/SettingsTab.jsx";
 import Logo from "./components/Logo.jsx";
-import { IconSearch, IconStar, IconGenieLamp, IconHumidor } from "./components/icons/Icons.jsx";
-import { searchPrices, fetchCategorie, fetchMarche } from "./api.js";
+import { IconSearch, IconStar, IconGenieLamp, IconHumidor, IconSettings } from "./components/icons/Icons.jsx";
+import { searchPrices, fetchCategorie, fetchMarche, fetchProvenienze } from "./api.js";
 import { getStoredUser, clearSession } from "./auth.js";
 
 const TABS = [
@@ -17,6 +18,7 @@ const TABS = [
   { id: "preferiti", label: "Preferiti", Icon: IconStar },
   { id: "wishlist", label: "Wishlist", Icon: IconGenieLamp },
   { id: "humidor", label: "Humidor", Icon: IconHumidor },
+  { id: "impostazioni", label: "Impostazioni", Icon: IconSettings },
 ];
 
 export default function App() {
@@ -28,6 +30,8 @@ export default function App() {
   const [categorie, setCategorie] = useState([]);
   const [marca, setMarca] = useState("");
   const [marche, setMarche] = useState([]);
+  const [provenienza, setProvenienza] = useState("");
+  const [provenienze, setProvenienze] = useState([]);
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -42,6 +46,9 @@ export default function App() {
     fetchMarche()
       .then((data) => setMarche(data.marche))
       .catch(() => setMarche([]));
+    fetchProvenienze()
+      .then((data) => setProvenienze(data.provenienze))
+      .catch(() => setProvenienze([]));
   }, []);
 
   const runSearch = useCallback(
@@ -50,7 +57,7 @@ export default function App() {
       setError(null);
       setSearched(true);
       try {
-        const data = await searchPrices({ q: overrideQ ?? q, categoria, marca });
+        const data = await searchPrices({ q: overrideQ ?? q, categoria, marca, provenienza });
         setResults(data.results);
       } catch (err) {
         setError(err.message);
@@ -58,7 +65,7 @@ export default function App() {
         setLoading(false);
       }
     },
-    [q, categoria, marca]
+    [q, categoria, marca, provenienza]
   );
 
   function handleLogout() {
@@ -100,7 +107,12 @@ export default function App() {
 
         {tab === "ricerca" && (
           <>
-            {user && <HumidorDashboard refreshToken={humidorRefresh} />}
+            {user && (
+              <HumidorDashboard
+                refreshToken={humidorRefresh}
+                onOpenInventory={() => setTab("humidor")}
+              />
+            )}
             <SearchBar
               q={q}
               setQ={setQ}
@@ -110,6 +122,9 @@ export default function App() {
               marca={marca}
               setMarca={setMarca}
               marche={marche}
+              provenienza={provenienza}
+              setProvenienza={setProvenienza}
+              provenienze={provenienze}
               onSearch={runSearch}
             />
             {error && <p className="error-msg">{error}</p>}
@@ -146,6 +161,13 @@ export default function App() {
             <HumidorTab refreshToken={humidorRefresh} />
           ) : (
             <p className="status-msg">Accedi per gestire il tuo humidor.</p>
+          ))}
+
+        {tab === "impostazioni" &&
+          (user ? (
+            <SettingsTab />
+          ) : (
+            <p className="status-msg">Accedi per vedere le impostazioni.</p>
           ))}
 
         <footer>

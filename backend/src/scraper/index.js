@@ -6,6 +6,7 @@ const {
   formatDataPubblicazione,
 } = require("./tabaccaiSource");
 const { parseSigariWorkbook } = require("./xlsxParser");
+const { classificaProvenienza } = require("../data/provenienze");
 
 async function alreadyProcessed(url) {
   const { rows } = await pool.query(
@@ -34,13 +35,20 @@ async function upsertProductAndPrice(row, fonteUrl, fonteDocumento, validoDal) {
     await client.query("BEGIN");
 
     const productRes = await client.query(
-      `INSERT INTO products (marca, categoria, formato, pezzi_per_confezione, codice_prodotto)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO products (marca, categoria, formato, pezzi_per_confezione, codice_prodotto, provenienza)
+       VALUES ($1, $2, $3, $4, $5, $6)
        ON CONFLICT (marca, categoria, formato) DO UPDATE
          SET pezzi_per_confezione = COALESCE(EXCLUDED.pezzi_per_confezione, products.pezzi_per_confezione),
              codice_prodotto = COALESCE(EXCLUDED.codice_prodotto, products.codice_prodotto)
        RETURNING id`,
-      [row.marca, row.categoria, row.formato, row.pezzi_per_confezione, row.codice_prodotto]
+      [
+        row.marca,
+        row.categoria,
+        row.formato,
+        row.pezzi_per_confezione,
+        row.codice_prodotto,
+        classificaProvenienza(row.marca),
+      ]
     );
     const productId = productRes.rows[0].id;
 

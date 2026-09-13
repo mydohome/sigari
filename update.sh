@@ -26,7 +26,8 @@ git merge --ff-only origin/main
 AFTER=$(git rev-parse --short HEAD)
 log "Commit dopo il pull: $AFTER"
 
-log "docker compose up --build -d"
+export GIT_COMMIT="$AFTER"
+log "docker compose up --build -d (GIT_COMMIT=$GIT_COMMIT)"
 docker compose up --build -d
 
 wait_for() {

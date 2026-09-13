@@ -1,4 +1,5 @@
 const pool = require("./pool");
+const { classificaProvenienza } = require("../data/provenienze");
 
 const SCHEMA_SQL = `
 CREATE TABLE IF NOT EXISTS products (
@@ -14,6 +15,12 @@ CREATE TABLE IF NOT EXISTS products (
 
 -- Aggiunge la colonna anche su database gia' esistenti creati prima di questa modifica
 ALTER TABLE products ADD COLUMN IF NOT EXISTS codice_prodotto TEXT;
+
+-- Provenienza (Cuba, Italia, Extra-Cuba, Altro), dedotta dalla marca: vedi
+-- backend/src/data/provenienze.js. Colonna libera (non un ENUM) per poter
+-- correggere a mano i casi ambigui senza una migrazione di schema.
+ALTER TABLE products ADD COLUMN IF NOT EXISTS provenienza TEXT;
+CREATE INDEX IF NOT EXISTS idx_products_provenienza ON products (provenienza);
 
 CREATE INDEX IF NOT EXISTS idx_products_marca_lower ON products (LOWER(marca));
 CREATE INDEX IF NOT EXISTS idx_products_categoria ON products (categoria);
@@ -147,10 +154,29 @@ CREATE TABLE IF NOT EXISTS humidor_reviews (
 );
 `;
 
+// Classifica la provenienza dei prodotti che non l'hanno ancora (nuovi prodotti
+// inseriti dallo scraper/import CSV la ricevono gia' al momento dell'inserimento:
+// vedi scraper/index.js e routes/admin.js). Rieseguibile senza effetti collaterali.
+async function backfillProvenienza(client) {
+  const { rows } = await client.query(
+    "SELECT id, marca FROM products WHERE provenienza IS NULL"
+  );
+  for (const row of rows) {
+    await client.query("UPDATE products SET provenienza = $1 WHERE id = $2", [
+      classificaProvenienza(row.marca),
+      row.id,
+    ]);
+  }
+  if (rows.length > 0) {
+    console.log(`Provenienza classificata per ${rows.length} prodotti.`);
+  }
+}
+
 async function migrate() {
   const client = await pool.connect();
   try {
     await client.query(SCHEMA_SQL);
+    await backfillProvenienza(client);
     console.log("Migrazione completata: schema aggiornato.");
   } finally {
     client.release();

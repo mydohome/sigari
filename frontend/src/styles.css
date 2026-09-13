@@ -629,6 +629,18 @@ footer a {
   box-shadow: 0 2px 6px var(--ombra);
 }
 
+button.stat-card-link {
+  font: inherit;
+  cursor: pointer;
+  width: 100%;
+  transition: transform 0.12s ease;
+}
+
+button.stat-card-link:hover {
+  transform: translateY(-1px);
+  border-color: var(--oro);
+}
+
 .stat-value {
   display: block;
   font-family: "Playfair Display", Georgia, serif;
@@ -962,6 +974,64 @@ footer a {
   cursor: pointer;
   color: var(--testo-tenue);
   padding: 0.2rem 0.5rem;
+}
+
+/* --- Pagina dettaglio prodotto (humidor) --- */
+
+.product-detail-page h2 {
+  margin: 0.4rem 0 1rem;
+  color: var(--tabacco-800);
+}
+
+.back-link {
+  font-size: 0.9rem;
+}
+
+.product-lots-table {
+  margin-top: 1rem;
+}
+
+/* --- Impostazioni --- */
+
+.settings h2 {
+  margin: 1.6rem 0 0.6rem;
+  font-size: 1.15rem;
+  color: var(--tabacco-800);
+}
+
+.settings h2:first-child {
+  margin-top: 0;
+}
+
+.settings > button {
+  margin: 0.6rem 0;
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(180deg, var(--oro-chiaro), var(--oro));
+  color: var(--tabacco-950);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.settings > button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.version-box {
+  background: var(--crema-carta);
+  border: 1px solid #e2d4bd;
+  border-radius: 10px;
+  padding: 0.9rem 1rem;
+  font-size: 0.92rem;
+}
+
+.version-box code {
+  background: #ece1cd;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  font-size: 0.85em;
 }
 
 /* --- Adattamento webapp iPhone (Aggiungi a Home / PWA) --- */

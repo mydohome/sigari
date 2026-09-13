@@ -20,11 +20,12 @@ async function handle(res) {
 
 // --- Ricerca prezzi ---
 
-export async function searchPrices({ q, categoria, marca, page = 1, pageSize = 20 }) {
+export async function searchPrices({ q, categoria, marca, provenienza, page = 1, pageSize = 20 }) {
   const params = new URLSearchParams();
   if (q) params.set("q", q);
   if (categoria) params.set("categoria", categoria);
   if (marca) params.set("marca", marca);
+  if (provenienza) params.set("provenienza", provenienza);
   params.set("page", page);
   params.set("pageSize", pageSize);
 
@@ -41,6 +42,11 @@ export async function fetchCategorie() {
 
 export async function fetchMarche() {
   const res = await fetch(`${API_BASE}/prices/meta/marche`);
+  return handle(res);
+}
+
+export async function fetchProvenienze() {
+  const res = await fetch(`${API_BASE}/prices/meta/provenienze`);
   return handle(res);
 }
 
@@ -253,5 +259,45 @@ export async function saveHumidorReview(productId, { stelle, descrizione }) {
 
 export async function fetchHumidorStats() {
   const res = await fetch(`${API_BASE}/humidor/stats`, { headers: { ...authHeaders() } });
+  return handle(res);
+}
+
+// --- Impostazioni (backup humidor, versione app) ---
+
+export async function fetchBackups() {
+  const res = await fetch(`${API_BASE}/settings/backups`, { headers: { ...authHeaders() } });
+  return handle(res);
+}
+
+export async function createBackup() {
+  const res = await fetch(`${API_BASE}/settings/backups`, {
+    method: "POST",
+    headers: { ...authHeaders() },
+  });
+  return handle(res);
+}
+
+export function backupDownloadUrl(filename) {
+  return `${API_BASE}/settings/backups/${encodeURIComponent(filename)}`;
+}
+
+export async function deleteBackup(filename) {
+  const res = await fetch(`${API_BASE}/settings/backups/${encodeURIComponent(filename)}`, {
+    method: "DELETE",
+    headers: { ...authHeaders() },
+  });
+  return handle(res);
+}
+
+export async function restoreBackup(filename) {
+  const res = await fetch(`${API_BASE}/settings/backups/${encodeURIComponent(filename)}/restore`, {
+    method: "POST",
+    headers: { ...authHeaders() },
+  });
+  return handle(res);
+}
+
+export async function fetchAppVersion() {
+  const res = await fetch(`${API_BASE}/settings/version`, { headers: { ...authHeaders() } });
   return handle(res);
 }

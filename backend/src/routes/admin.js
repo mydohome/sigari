@@ -3,6 +3,7 @@ const multer = require("multer");
 const { parse } = require("csv-parse/sync");
 const pool = require("../db/pool");
 const { runScrapeCycle } = require("../scraper");
+const { classificaProvenienza } = require("../data/provenienze");
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -79,13 +80,13 @@ router.post("/import-csv", requireAdmin, upload.single("file"), async (req, res)
       try {
         await client.query("BEGIN");
         const productRes = await client.query(
-          `INSERT INTO products (marca, categoria, formato, pezzi_per_confezione, codice_prodotto)
-           VALUES ($1, $2, $3, $4, $5)
+          `INSERT INTO products (marca, categoria, formato, pezzi_per_confezione, codice_prodotto, provenienza)
+           VALUES ($1, $2, $3, $4, $5, $6)
            ON CONFLICT (marca, categoria, formato) DO UPDATE
              SET pezzi_per_confezione = COALESCE(EXCLUDED.pezzi_per_confezione, products.pezzi_per_confezione),
                  codice_prodotto = COALESCE(EXCLUDED.codice_prodotto, products.codice_prodotto)
            RETURNING id`,
-          [marca, categoria, formato, pezzi, codiceProdotto]
+          [marca, categoria, formato, pezzi, codiceProdotto, classificaProvenienza(marca)]
         );
         const productId = productRes.rows[0].id;
 
@@ -112,6 +113,26 @@ router.post("/import-csv", requireAdmin, upload.single("file"), async (req, res)
   } catch (err) {
     console.error("Errore import CSV:", err);
     res.status(500).json({ error: "Errore nella lettura del CSV." });
+  }
+});
+
+// PATCH /api/admin/products/:id/provenienza { provenienza } - correzione manuale
+// per i casi in cui la classificazione automatica per marca sbaglia.
+router.patch("/products/:id/provenienza", requireAdmin, async (req, res) => {
+  const { provenienza } = req.body || {};
+  if (!provenienza || !provenienza.trim()) {
+    return res.status(400).json({ error: "provenienza richiesta." });
+  }
+  try {
+    const result = await pool.query(
+      "UPDATE products SET provenienza = $1 WHERE id = $2 RETURNING id",
+      [provenienza.trim(), req.params.id]
+    );
+    if (!result.rows.length) return res.status(404).json({ error: "Prodotto non trovato." });
+    res.json({ message: "Provenienza aggiornata." });
+  } catch (err) {
+    console.error("Errore aggiornamento provenienza:", err);
+    res.status(500).json({ error: "Errore nell'aggiornamento della provenienza." });
   }
 });
 
