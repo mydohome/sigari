@@ -189,6 +189,15 @@ export async function addHumidorItem(payload) {
   return handle(res);
 }
 
+export async function updateHumidorItem(id, payload) {
+  const res = await fetch(`${API_BASE}/humidor/items/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify(payload),
+  });
+  return handle(res);
+}
+
 export async function deleteHumidorItem(id) {
   const res = await fetch(`${API_BASE}/humidor/items/${id}`, {
     method: "DELETE",

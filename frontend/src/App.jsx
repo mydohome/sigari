@@ -5,12 +5,21 @@ import AuthBar from "./components/AuthBar.jsx";
 import FavoritesTab from "./components/FavoritesTab.jsx";
 import WishlistTab from "./components/WishlistTab.jsx";
 import HumidorTab from "./components/HumidorTab.jsx";
+import GlobalActions from "./components/GlobalActions.jsx";
 import Logo from "./components/Logo.jsx";
+import { IconSearch, IconStar, IconGenieLamp, IconHumidor } from "./components/icons/Icons.jsx";
 import { searchPrices, fetchCategorie, fetchMarche } from "./api.js";
 import { getStoredUser, clearSession } from "./auth.js";
 
+const TABS = [
+  { id: "ricerca", label: "Ricerca", Icon: IconSearch },
+  { id: "preferiti", label: "Preferiti", Icon: IconStar },
+  { id: "wishlist", label: "Wishlist", Icon: IconGenieLamp },
+  { id: "humidor", label: "Humidor", Icon: IconHumidor },
+];
+
 export default function App() {
-  const [tab, setTab] = useState("ricerca"); // "ricerca" | "preferiti" | "wishlist"
+  const [tab, setTab] = useState("ricerca");
   const [user, setUser] = useState(getStoredUser());
 
   const [q, setQ] = useState("");
@@ -23,6 +32,7 @@ export default function App() {
   const [error, setError] = useState(null);
   const [searched, setSearched] = useState(false);
   const [loginHint, setLoginHint] = useState(false);
+  const [humidorRefresh, setHumidorRefresh] = useState(0);
 
   useEffect(() => {
     fetchCategorie()
@@ -50,11 +60,6 @@ export default function App() {
     [q, categoria, marca]
   );
 
-  useEffect(() => {
-    runSearch();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   function handleLogout() {
     clearSession();
     setUser(null);
@@ -72,94 +77,93 @@ export default function App() {
           <div className="brand">
             <Logo />
             <div>
-              <h1>Prezzi Sigari in Italia</h1>
+              <h1>Sigari Track</h1>
               <p className="subtitle">
-                Dati aggiornati automaticamente ogni settimana, basati sulle tariffe ufficiali ADM.
+                Prezzi aggiornati ogni settimana dalle tariffe ufficiali ADM, humidor e fumate sotto
+                controllo.
               </p>
             </div>
           </div>
           <AuthBar user={user} onAuthChange={setUser} onLogout={handleLogout} />
         </div>
-
-        <nav className="tabs">
-          <button className={tab === "ricerca" ? "active" : ""} onClick={() => setTab("ricerca")}>
-            Ricerca
-          </button>
-          <button className={tab === "preferiti" ? "active" : ""} onClick={() => setTab("preferiti")}>
-            Preferiti
-          </button>
-          <button className={tab === "wishlist" ? "active" : ""} onClick={() => setTab("wishlist")}>
-            Wishlist
-          </button>
-          <button className={tab === "humidor" ? "active" : ""} onClick={() => setTab("humidor")}>
-            Humidor
-          </button>
-        </nav>
       </header>
 
-      {loginHint && (
-        <p className="hint-msg">Devi accedere o registrarti per usare questa funzione.</p>
-      )}
+      <nav className="tabs">
+        {TABS.map(({ id, label, Icon }) => (
+          <button key={id} className={tab === id ? "active" : ""} onClick={() => setTab(id)}>
+            <Icon size={22} filled={id === "preferiti" && tab === id} />
+            <span>{label}</span>
+          </button>
+        ))}
+      </nav>
 
-      {tab === "ricerca" && (
-        <>
-          <SearchBar
-            q={q}
-            setQ={setQ}
-            categoria={categoria}
-            setCategoria={setCategoria}
-            categorie={categorie}
-            marca={marca}
-            setMarca={setMarca}
-            marche={marche}
-            onSearch={runSearch}
-          />
-          {error && <p className="error-msg">{error}</p>}
-          {searched && (
-            <ResultsTable
-              results={results}
-              loading={loading}
-              user={user}
-              onRequireLogin={handleRequireLogin}
-              onChanged={runSearch}
+      <div className="app-content">
+        {loginHint && <p className="hint-msg">Devi accedere o registrarti per usare questa funzione.</p>}
+
+        {tab === "ricerca" && (
+          <>
+            <SearchBar
+              q={q}
+              setQ={setQ}
+              categoria={categoria}
+              setCategoria={setCategoria}
+              categorie={categorie}
+              marca={marca}
+              setMarca={setMarca}
+              marche={marche}
+              onSearch={runSearch}
             />
-          )}
-        </>
-      )}
+            {error && <p className="error-msg">{error}</p>}
+            {searched ? (
+              <ResultsTable
+                results={results}
+                loading={loading}
+                user={user}
+                onRequireLogin={handleRequireLogin}
+                onChanged={runSearch}
+              />
+            ) : (
+              <p className="status-msg">Cerca una marca o scegli un filtro per vedere i prezzi.</p>
+            )}
+          </>
+        )}
 
-      {tab === "preferiti" &&
-        (user ? (
-          <FavoritesTab />
-        ) : (
-          <p className="status-msg">Accedi per vedere e gestire i tuoi preferiti.</p>
-        ))}
+        {tab === "preferiti" &&
+          (user ? (
+            <FavoritesTab />
+          ) : (
+            <p className="status-msg">Accedi per vedere e gestire i tuoi preferiti.</p>
+          ))}
 
-      {tab === "wishlist" &&
-        (user ? (
-          <WishlistTab />
-        ) : (
-          <p className="status-msg">Accedi per vedere e gestire la tua wishlist.</p>
-        ))}
+        {tab === "wishlist" &&
+          (user ? (
+            <WishlistTab />
+          ) : (
+            <p className="status-msg">Accedi per vedere e gestire la tua wishlist.</p>
+          ))}
 
-      {tab === "humidor" &&
-        (user ? (
-          <HumidorTab />
-        ) : (
-          <p className="status-msg">Accedi per gestire il tuo humidor.</p>
-        ))}
+        {tab === "humidor" &&
+          (user ? (
+            <HumidorTab refreshToken={humidorRefresh} />
+          ) : (
+            <p className="status-msg">Accedi per gestire il tuo humidor.</p>
+          ))}
 
-      <footer>
-        <p>
-          Fonte dati: listino Sigari della Federazione Italiana Tabaccai, conforme alle tariffe{" "}
-          <a
-            href="https://www.adm.gov.it/portale/monopoli/tabacchi/prezzi/prezzi_pubblico"
-            target="_blank"
-            rel="noreferrer"
-          >
-            dell'Agenzia delle Dogane e dei Monopoli
-          </a>
-        </p>
-      </footer>
+        <footer>
+          <p>
+            Fonte dati: listino Sigari della Federazione Italiana Tabaccai, conforme alle tariffe{" "}
+            <a
+              href="https://www.adm.gov.it/portale/monopoli/tabacchi/prezzi/prezzi_pubblico"
+              target="_blank"
+              rel="noreferrer"
+            >
+              dell'Agenzia delle Dogane e dei Monopoli
+            </a>
+          </p>
+        </footer>
+      </div>
+
+      {user && <GlobalActions onHumidorChange={() => setHumidorRefresh((v) => v + 1)} />}
     </div>
   );
 }

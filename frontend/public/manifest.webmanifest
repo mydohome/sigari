@@ -1,6 +1,6 @@
 {
-  "name": "Prezzi Sigari Italia",
-  "short_name": "Sigari",
+  "name": "Sigari Track",
+  "short_name": "Sigari Track",
   "description": "Prezzi, humidor e fumate dei tuoi sigari",
   "start_url": "/",
   "display": "standalone",

@@ -1,17 +1,8 @@
 import React, { useEffect, useState } from "react";
-import {
-  fetchHumidorItems,
-  addHumidorItem,
-  deleteHumidorItem,
-  fetchFumate,
-  addFumata,
-  undoFumata,
-  fetchHumidorStats,
-} from "../api.js";
-import ProductPicker from "./ProductPicker.jsx";
-import ShopPicker from "./ShopPicker.jsx";
+import { fetchHumidorItems, deleteHumidorItem, fetchFumate, undoFumata, fetchHumidorStats } from "../api.js";
 import BarChart from "./BarChart.jsx";
 import HumidorReviewEditor from "./HumidorReviewEditor.jsx";
+import PurchaseModal from "./PurchaseModal.jsx";
 
 function formatEuro(value) {
   if (value === null || value === undefined) return "—";
@@ -23,35 +14,16 @@ function formatData(dateStr) {
   return new Intl.DateTimeFormat("it-IT").format(new Date(dateStr));
 }
 
-function oggi() {
-  return new Date().toISOString().slice(0, 10);
-}
-
 const MESI = ["Gen", "Feb", "Mar", "Apr", "Mag", "Giu", "Lug", "Ago", "Set", "Ott", "Nov", "Dic"];
 
-export default function HumidorTab() {
+export default function HumidorTab({ refreshToken }) {
   const [items, setItems] = useState([]);
   const [stats, setStats] = useState(null);
   const [fumate, setFumate] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  const [showAdd, setShowAdd] = useState(false);
-  const [prodottoScelto, setProdottoScelto] = useState(null);
-  const [prezzo, setPrezzo] = useState("");
-  const [dataAcquisto, setDataAcquisto] = useState(oggi());
-  const [quantita, setQuantita] = useState(1);
-  const [shop, setShop] = useState({ nome: "" });
-  const [salvandoAcquisto, setSalvandoAcquisto] = useState(false);
-  const [avvisoPrezzo, setAvvisoPrezzo] = useState(null);
-  const [erroreForm, setErroreForm] = useState(null);
-
-  const [showFumata, setShowFumata] = useState(false);
-  const [itemFumata, setItemFumata] = useState("");
-  const [quantitaFumata, setQuantitaFumata] = useState(1);
-  const [registrandoFumata, setRegistrandoFumata] = useState(false);
-
   const [recensioneAperta, setRecensioneAperta] = useState(null);
+  const [itemInModifica, setItemInModifica] = useState(null);
 
   async function loadAll() {
     setLoading(true);
@@ -70,55 +42,8 @@ export default function HumidorTab() {
 
   useEffect(() => {
     loadAll();
-  }, []);
-
-  async function handleAddAcquisto(e) {
-    e.preventDefault();
-    setErroreForm(null);
-    if (!prodottoScelto) {
-      setErroreForm("Scegli un sigaro dall'elenco.");
-      return;
-    }
-    setSalvandoAcquisto(true);
-    setAvvisoPrezzo(null);
-    try {
-      const payload = {
-        product_id: prodottoScelto.product_id,
-        prezzo_acquisto: Number(prezzo),
-        data_acquisto: dataAcquisto,
-        quantita: Math.max(1, parseInt(quantita, 10) || 1),
-        shop: shop?.nome?.trim() ? shop : null,
-      };
-      const res = await addHumidorItem(payload);
-      if (res.confronto_prezzo) setAvvisoPrezzo(res.confronto_prezzo);
-      setProdottoScelto(null);
-      setPrezzo("");
-      setQuantita(1);
-      setShop({ nome: "" });
-      await loadAll();
-    } catch (err) {
-      setErroreForm(err.message);
-    } finally {
-      setSalvandoAcquisto(false);
-    }
-  }
-
-  async function handleFumata(e) {
-    e.preventDefault();
-    if (!itemFumata) return;
-    setRegistrandoFumata(true);
-    try {
-      await addFumata({ humidor_item_id: Number(itemFumata), quantita: Math.max(1, parseInt(quantitaFumata, 10) || 1) });
-      setItemFumata("");
-      setQuantitaFumata(1);
-      setShowFumata(false);
-      await loadAll();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setRegistrandoFumata(false);
-    }
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshToken]);
 
   async function handleDeleteItem(id) {
     await deleteHumidorItem(id);
@@ -132,8 +57,6 @@ export default function HumidorTab() {
 
   if (loading) return <p className="status-msg">Caricamento humidor...</p>;
   if (error) return <p className="error-msg">{error}</p>;
-
-  const disponibili = items.filter((it) => it.quantita_rimanente > 0);
 
   return (
     <div className="humidor">
@@ -185,109 +108,11 @@ export default function HumidorTab() {
         </div>
       )}
 
-      <div className="humidor-actions">
-        <button type="button" onClick={() => setShowAdd((v) => !v)}>
-          {showAdd ? "Annulla" : "+ Aggiungi acquisto"}
-        </button>
-        <button
-          type="button"
-          className="secondary"
-          onClick={() => setShowFumata((v) => !v)}
-          disabled={disponibili.length === 0}
-        >
-          {showFumata ? "Annulla" : "🔥 Registra una fumata"}
-        </button>
-      </div>
-
-      {showAdd && (
-        <form className="humidor-form" onSubmit={handleAddAcquisto}>
-          <ProductPicker selected={prodottoScelto} onSelect={setProdottoScelto} />
-          <div className="humidor-form-row">
-            <label>
-              Prezzo pagato (a sigaro)
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                required
-                value={prezzo}
-                onChange={(e) => setPrezzo(e.target.value)}
-              />
-            </label>
-            <label>
-              Data acquisto
-              <input
-                type="date"
-                required
-                value={dataAcquisto}
-                onChange={(e) => setDataAcquisto(e.target.value)}
-              />
-            </label>
-            <label>
-              Quantità
-              <input
-                type="number"
-                min="1"
-                value={quantita}
-                onChange={(e) => setQuantita(e.target.value)}
-              />
-            </label>
-          </div>
-          <ShopPicker value={shop?.nome || ""} onChange={setShop} />
-          {erroreForm && <p className="error-msg small">{erroreForm}</p>}
-          <button type="submit" disabled={salvandoAcquisto}>
-            {salvandoAcquisto ? "Salvo..." : "Aggiungi all'humidor"}
-          </button>
-        </form>
-      )}
-
-      {avvisoPrezzo && (
-        <p
-          className={`hint-msg ${
-            avvisoPrezzo.percentuale > 5 ? "hint-warn" : avvisoPrezzo.percentuale < -5 ? "hint-good" : ""
-          }`}
-        >
-          Prezzo ufficiale aggiornato al {formatData(avvisoPrezzo.aggiornato_al)}:{" "}
-          {formatEuro(avvisoPrezzo.prezzo_ufficiale)} a sigaro — hai pagato{" "}
-          {avvisoPrezzo.differenza >= 0 ? "in più" : "in meno"} di {formatEuro(Math.abs(avvisoPrezzo.differenza))}{" "}
-          ({avvisoPrezzo.percentuale > 0 ? "+" : ""}
-          {avvisoPrezzo.percentuale}%).
-        </p>
-      )}
-
-      {showFumata && (
-        <form className="humidor-form" onSubmit={handleFumata}>
-          <label>
-            Cosa hai fumato?
-            <select value={itemFumata} onChange={(e) => setItemFumata(e.target.value)} required>
-              <option value="">Scegli dall'humidor...</option>
-              {disponibili.map((it) => (
-                <option key={it.id} value={it.id}>
-                  {it.marca} {it.formato ? `— ${it.formato}` : ""} ({it.quantita_rimanente} rimasti, acquistato
-                  il {formatData(it.data_acquisto)}
-                  {it.shop_nome ? ` da ${it.shop_nome}` : ""})
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Quantità
-            <input
-              type="number"
-              min="1"
-              value={quantitaFumata}
-              onChange={(e) => setQuantitaFumata(e.target.value)}
-            />
-          </label>
-          <button type="submit" disabled={registrandoFumata}>
-            {registrandoFumata ? "Registro..." : "Registra fumata"}
-          </button>
-        </form>
-      )}
-
       <h2>Il mio humidor</h2>
       {items.length === 0 ? (
-        <p className="status-msg">Il tuo humidor è vuoto. Aggiungi il tuo primo acquisto qui sopra.</p>
+        <p className="status-msg">
+          Il tuo humidor è vuoto. Usa il pulsante 🛒 per registrare il tuo primo acquisto.
+        </p>
       ) : (
         <table className="results-table">
           <thead>
@@ -314,6 +139,9 @@ export default function HumidorTab() {
                   <td>{formatData(it.data_acquisto)}</td>
                   <td>{it.shop_nome || "—"}</td>
                   <td className="actions-cell">
+                    <button className="link-button" onClick={() => setItemInModifica(it)}>
+                      Modifica
+                    </button>
                     <button
                       className="link-button"
                       onClick={() =>
@@ -357,6 +185,14 @@ export default function HumidorTab() {
             ))}
           </ul>
         </>
+      )}
+
+      {itemInModifica && (
+        <PurchaseModal
+          item={itemInModifica}
+          onClose={() => setItemInModifica(null)}
+          onSaved={loadAll}
+        />
       )}
     </div>
   );

@@ -1,4 +1,4 @@
-# Portale Prezzi Sigari Italia
+# Sigari Track
 
 Monitoraggio dei prezzi dei **sigari** in Italia, con dati aggiornati automaticamente
 ogni settimana.
