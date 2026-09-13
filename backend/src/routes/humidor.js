@@ -236,6 +236,27 @@ router.post("/items", async (req, res) => {
   res.status(201).json({ id: newId, confronto_prezzo: confrontoPrezzo });
 });
 
+// PATCH /api/humidor/items/bulk-location { item_ids: [...], location_id } - assegna
+// una location a piu' lotti in una volta (es. quelli senza location nel riepilogo
+// humidor), senza doverli modificare uno per uno. Va registrata PRIMA di
+// "/items/:id" perche' altrimenti quella rotta la intercetterebbe (":id" = "bulk-location").
+router.patch("/items/bulk-location", async (req, res) => {
+  const { item_ids, location_id } = req.body || {};
+  if (!Array.isArray(item_ids) || !item_ids.length || !location_id) {
+    return res.status(400).json({ error: "item_ids e location_id sono richiesti." });
+  }
+  try {
+    const result = await pool.query(
+      `UPDATE humidor_items SET location_id = $1 WHERE id = ANY($2::int[]) AND user_id = $3`,
+      [location_id, item_ids, req.userId]
+    );
+    res.json({ message: "Location assegnata.", aggiornati: result.rowCount });
+  } catch (err) {
+    console.error("Errore assegnazione location multipla:", err);
+    res.status(500).json({ error: "Errore nell'assegnazione della location." });
+  }
+});
+
 // PATCH /api/humidor/items/:id - modifica prezzo/data/tabaccheria/note
 router.patch("/items/:id", async (req, res) => {
   const { prezzo_acquisto, data_acquisto, note, shop, location_id } = req.body || {};

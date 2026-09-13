@@ -295,6 +295,15 @@ export async function deleteLocation(id) {
   return handle(res);
 }
 
+export async function bulkAssignLocation(itemIds, locationId) {
+  const res = await fetch(`${API_BASE}/humidor/items/bulk-location`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ item_ids: itemIds, location_id: locationId }),
+  });
+  return handle(res);
+}
+
 // --- Impostazioni (backup humidor, versione app) ---
 
 export async function fetchBackups() {
