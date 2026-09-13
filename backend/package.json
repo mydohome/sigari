@@ -1,0 +1,25 @@
+{
+  "name": "tabacchi-prezzi-backend",
+  "version": "1.0.0",
+  "description": "API + scraper per il monitoraggio dei prezzi dei tabacchi (fonte ufficiale ADM)",
+  "main": "src/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/index.js",
+    "migrate": "node src/db/migrate.js",
+    "scrape:now": "node -e \"require('./src/scraper').runScrapeCycle().then(()=>process.exit(0))\""
+  },
+  "dependencies": {
+    "axios": "^1.7.7",
+    "bcryptjs": "^2.4.3",
+    "cheerio": "^1.0.0",
+    "cors": "^2.8.5",
+    "csv-parse": "^5.5.6",
+    "express": "^4.21.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "node-cron": "^3.0.3",
+    "pg": "^8.13.0",
+    "xlsx": "^0.18.5"
+  }
+}

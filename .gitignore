@@ -1,0 +1,22 @@
+# Dipendenze
+node_modules/
+
+# Variabili d'ambiente con segreti (MAI committare)
+.env
+
+# Build frontend
+frontend/dist/
+
+# File scaricati/generati dal backend
+backend/downloads/
+
+# Log
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/

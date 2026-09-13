@@ -1,0 +1,50 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-tabacchi}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tabacchi}
+      POSTGRES_DB: ${POSTGRES_DB:-tabacchi_prezzi}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-tabacchi}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-tabacchi}:${POSTGRES_PASSWORD:-tabacchi}@db:5432/${POSTGRES_DB:-tabacchi_prezzi}
+      PORT: 4000
+      SCRAPE_CRON: ${SCRAPE_CRON:-0 3 * * 1}
+      SCRAPE_ON_BOOT: ${SCRAPE_ON_BOOT:-true}
+      ADMIN_TOKEN: ${ADMIN_TOKEN:-changeme}
+      JWT_SECRET: ${JWT_SECRET:-changeme}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      REVIEW_SOURCES: ${REVIEW_SOURCES:-gustotabacco.it,accademiafumolento.forumfree.it,rollingtobacco.it,bottegadelfumatore.com,sigarietabacchi.it}
+      REVIEW_MODEL: ${REVIEW_MODEL:-claude-haiku-4-5-20251001}
+    ports:
+      - "4000:4000"
+    volumes:
+      - backend_downloads:/app/downloads
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+
+volumes:
+  db_data:
+  backend_downloads:
