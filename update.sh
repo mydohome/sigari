@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
-# Deploy/aggiornamento del Portale Prezzi Sigari in produzione.
-# Uso: ./deploy.sh   (da eseguire dentro ~/docker/sigari sul server)
+# Aggiornamento del Portale Prezzi Sigari in produzione.
+# Uso: ./update.sh   (da eseguire dentro ~/docker/sigari sul server)
 set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
 
-log "Avvio deploy in $(pwd)"
+log "Avvio aggiornamento in $(pwd)"
 
 if [ -n "$(git status --porcelain)" ]; then
   echo "ERRORE: ci sono modifiche locali non committate:"
   git status --short
-  echo "Risolvi (commit/stash/checkout) prima di eseguire il deploy."
+  echo "Risolvi (commit/stash/checkout) prima di eseguire l'aggiornamento."
   exit 1
 fi
 
@@ -61,10 +61,10 @@ log "--- Stato container ---"
 docker compose ps
 
 if [ "$FAIL" -ne 0 ]; then
-  log "DEPLOY FALLITO: uno o più controlli di salute non sono passati."
+  log "AGGIORNAMENTO FALLITO: uno o più controlli di salute non sono passati."
   log "Ultimi log:"
   docker compose logs --tail=40
   exit 1
 fi
 
-log "Deploy completato con successo ($BEFORE -> $AFTER)"
+log "Aggiornamento completato con successo ($BEFORE -> $AFTER)"
