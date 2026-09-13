@@ -20,10 +20,11 @@ async function handle(res) {
 
 // --- Ricerca prezzi ---
 
-export async function searchPrices({ q, categoria, page = 1, pageSize = 20 }) {
+export async function searchPrices({ q, categoria, marca, page = 1, pageSize = 20 }) {
   const params = new URLSearchParams();
   if (q) params.set("q", q);
   if (categoria) params.set("categoria", categoria);
+  if (marca) params.set("marca", marca);
   params.set("page", page);
   params.set("pageSize", pageSize);
 
@@ -35,6 +36,11 @@ export async function searchPrices({ q, categoria, page = 1, pageSize = 20 }) {
 
 export async function fetchCategorie() {
   const res = await fetch(`${API_BASE}/prices/meta/categorie`);
+  return handle(res);
+}
+
+export async function fetchMarche() {
+  const res = await fetch(`${API_BASE}/prices/meta/marche`);
   return handle(res);
 }
 

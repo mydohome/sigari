@@ -4,7 +4,8 @@ import ResultsTable from "./components/ResultsTable.jsx";
 import AuthBar from "./components/AuthBar.jsx";
 import FavoritesTab from "./components/FavoritesTab.jsx";
 import WishlistTab from "./components/WishlistTab.jsx";
-import { searchPrices, fetchCategorie } from "./api.js";
+import Logo from "./components/Logo.jsx";
+import { searchPrices, fetchCategorie, fetchMarche } from "./api.js";
 import { getStoredUser, clearSession } from "./auth.js";
 
 export default function App() {
@@ -14,6 +15,8 @@ export default function App() {
   const [q, setQ] = useState("");
   const [categoria, setCategoria] = useState("");
   const [categorie, setCategorie] = useState([]);
+  const [marca, setMarca] = useState("");
+  const [marche, setMarche] = useState([]);
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -24,6 +27,9 @@ export default function App() {
     fetchCategorie()
       .then((data) => setCategorie(data.categorie))
       .catch(() => setCategorie([]));
+    fetchMarche()
+      .then((data) => setMarche(data.marche))
+      .catch(() => setMarche([]));
   }, []);
 
   const runSearch = useCallback(
@@ -32,7 +38,7 @@ export default function App() {
       setError(null);
       setSearched(true);
       try {
-        const data = await searchPrices({ q: overrideQ ?? q, categoria });
+        const data = await searchPrices({ q: overrideQ ?? q, categoria, marca });
         setResults(data.results);
       } catch (err) {
         setError(err.message);
@@ -40,7 +46,7 @@ export default function App() {
         setLoading(false);
       }
     },
-    [q, categoria]
+    [q, categoria, marca]
   );
 
   useEffect(() => {
@@ -62,11 +68,14 @@ export default function App() {
     <div className="app">
       <header>
         <div className="header-top">
-          <div>
-            <h1>Prezzi Sigari in Italia</h1>
-            <p className="subtitle">
-              Dati aggiornati automaticamente ogni settimana, basati sulle tariffe ufficiali ADM.
-            </p>
+          <div className="brand">
+            <Logo />
+            <div>
+              <h1>Prezzi Sigari in Italia</h1>
+              <p className="subtitle">
+                Dati aggiornati automaticamente ogni settimana, basati sulle tariffe ufficiali ADM.
+              </p>
+            </div>
           </div>
           <AuthBar user={user} onAuthChange={setUser} onLogout={handleLogout} />
         </div>
@@ -96,6 +105,9 @@ export default function App() {
             categoria={categoria}
             setCategoria={setCategoria}
             categorie={categorie}
+            marca={marca}
+            setMarca={setMarca}
+            marche={marche}
             onSearch={runSearch}
           />
           {error && <p className="error-msg">{error}</p>}

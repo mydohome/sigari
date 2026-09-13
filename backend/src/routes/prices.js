@@ -8,7 +8,7 @@ const router = express.Router();
 router.get("/autocomplete", async (req, res) => {
   const { q = "" } = req.query;
   const term = q.trim();
-  if (term.length < 2) return res.json({ suggestioni: [] });
+  if (term.length < 2) return res.json({ suggerimenti: [] });
 
   try {
     const { rows } = await pool.query(
@@ -19,16 +19,16 @@ router.get("/autocomplete", async (req, res) => {
        LIMIT 8`,
       [`${term.toLowerCase()}%`]
     );
-    res.json({ suggestioni: rows.map((r) => r.marca) });
+    res.json({ suggerimenti: rows.map((r) => r.marca) });
   } catch (err) {
     console.error("Errore autocompletamento:", err);
     res.status(500).json({ error: "Errore nell'autocompletamento." });
   }
 });
 
-// GET /api/prices/search?q=marlboro&categoria=Sigarette&page=1&pageSize=20
+// GET /api/prices/search?q=marlboro&categoria=Sigarette&marca=Cohiba&page=1&pageSize=20
 router.get("/search", optionalAuth, async (req, res) => {
-  const { q = "", categoria = "", page = "1", pageSize = "20" } = req.query;
+  const { q = "", categoria = "", marca = "", page = "1", pageSize = "20" } = req.query;
 
   const limit = Math.min(parseInt(pageSize, 10) || 20, 100);
   const offset = (Math.max(parseInt(page, 10) || 1, 1) - 1) * limit;
@@ -39,6 +39,10 @@ router.get("/search", optionalAuth, async (req, res) => {
   if (q.trim()) {
     params.push(`%${q.trim().toLowerCase()}%`);
     conditions.push(`LOWER(p.marca) LIKE $${params.length}`);
+  }
+  if (marca.trim()) {
+    params.push(marca.trim());
+    conditions.push(`p.marca = $${params.length}`);
   }
   if (categoria.trim()) {
     params.push(categoria.trim());
@@ -139,6 +143,17 @@ router.get("/meta/categorie", async (_req, res) => {
   } catch (err) {
     console.error("Errore recupero categorie:", err);
     res.status(500).json({ error: "Errore nel recupero delle categorie." });
+  }
+});
+
+// GET /api/prices/meta/marche
+router.get("/meta/marche", async (_req, res) => {
+  try {
+    const { rows } = await pool.query(`SELECT DISTINCT marca FROM products ORDER BY marca ASC`);
+    res.json({ marche: rows.map((r) => r.marca) });
+  } catch (err) {
+    console.error("Errore recupero marche:", err);
+    res.status(500).json({ error: "Errore nel recupero delle marche." });
   }
 });
 
