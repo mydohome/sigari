@@ -8,11 +8,16 @@ function formatData(dateStr) {
   return new Intl.DateTimeFormat("it-IT").format(new Date(dateStr));
 }
 
+function oggi() {
+  return new Date().toISOString().slice(0, 10);
+}
+
 export default function FumataModal({ onClose, onSaved }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [itemId, setItemId] = useState("");
   const [quantita, setQuantita] = useState(1);
+  const [dataFumata, setDataFumata] = useState(oggi());
   const [registrando, setRegistrando] = useState(false);
   const [errore, setErrore] = useState(null);
 
@@ -34,7 +39,11 @@ export default function FumataModal({ onClose, onSaved }) {
     setErrore(null);
     setRegistrando(true);
     try {
-      await addFumata({ humidor_item_id: Number(itemId), quantita: Math.max(1, parseInt(quantita, 10) || 1) });
+      await addFumata({
+        humidor_item_id: Number(itemId),
+        quantita: Math.max(1, parseInt(quantita, 10) || 1),
+        data_fumata: dataFumata,
+      });
       const scelto = items.find((it) => String(it.id) === String(itemId));
       onSaved();
       setFumataFatta(scelto);
@@ -108,10 +117,21 @@ export default function FumataModal({ onClose, onSaved }) {
               ))}
             </select>
           </label>
-          <label>
-            Quantità
-            <input type="number" min="1" value={quantita} onChange={(e) => setQuantita(e.target.value)} />
-          </label>
+          <div className="humidor-form-row">
+            <label>
+              Quantità
+              <input type="number" min="1" value={quantita} onChange={(e) => setQuantita(e.target.value)} />
+            </label>
+            <label>
+              Data
+              <input
+                type="date"
+                required
+                value={dataFumata}
+                onChange={(e) => setDataFumata(e.target.value)}
+              />
+            </label>
+          </div>
           {errore && <p className="error-msg small">{errore}</p>}
           <button type="submit" disabled={registrando}>
             {registrando ? "Registro..." : "Registra fumata"}

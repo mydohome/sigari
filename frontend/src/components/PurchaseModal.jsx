@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Modal from "./Modal.jsx";
 import ProductPicker from "./ProductPicker.jsx";
 import ShopPicker from "./ShopPicker.jsx";
-import { addHumidorItem, updateHumidorItem } from "../api.js";
+import { addHumidorItem, updateHumidorItem, fetchLocations } from "../api.js";
 
 function formatEuro(value) {
   if (value === null || value === undefined) return "—";
@@ -20,21 +20,46 @@ function oggi() {
 
 // Usato sia per registrare un nuovo acquisto (senza `item`) sia per
 // modificarne uno esistente (passando `item`): in modifica il sigaro non è
-// cambiabile, solo prezzo/data/tabaccheria/note.
-export default function PurchaseModal({ item, onClose, onSaved }) {
+// cambiabile, solo prezzo/data/tabaccheria/note/location.
+// `presetProduct` permette di aprire il modale già con un sigaro scelto
+// (es. dal pulsante "Registra acquisto" nei risultati di ricerca), saltando
+// il ProductPicker.
+export default function PurchaseModal({ item, presetProduct, onClose, onSaved }) {
   const editing = Boolean(item);
-  const [prodottoScelto, setProdottoScelto] = useState(null);
-  const [prezzo, setPrezzo] = useState(editing ? item.prezzo_acquisto : "");
+  const [prodottoScelto, setProdottoScelto] = useState(presetProduct || null);
+  const [prezzo, setPrezzo] = useState(
+    editing
+      ? item.prezzo_acquisto
+      : presetProduct?.prezzo_singolo
+      ? Number(presetProduct.prezzo_singolo).toFixed(2)
+      : ""
+  );
   const [dataAcquisto, setDataAcquisto] = useState(editing ? item.data_acquisto?.slice(0, 10) : oggi());
   const [quantita, setQuantita] = useState(1);
   const [shop, setShop] = useState(
     editing ? { id: item.shop_id, nome: item.shop_nome || "" } : { nome: "" }
   );
   const [note, setNote] = useState(editing ? item.note || "" : "");
+  const [locations, setLocations] = useState([]);
+  const [locationId, setLocationId] = useState(editing ? item.location_id || "" : "");
   const [salvando, setSalvando] = useState(false);
   const [errore, setErrore] = useState(null);
   const [avvisoPrezzo, setAvvisoPrezzo] = useState(null);
   const [fatto, setFatto] = useState(false);
+
+  useEffect(() => {
+    fetchLocations()
+      .then((data) => {
+        const elenco = data.locations || [];
+        setLocations(elenco);
+        if (!editing) {
+          const def = elenco.find((l) => l.nome === "Humidor") || elenco[0];
+          if (def) setLocationId(def.id);
+        }
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function handleSelectProduct(row) {
     setProdottoScelto(row);
@@ -60,6 +85,7 @@ export default function PurchaseModal({ item, onClose, onSaved }) {
           data_acquisto: dataAcquisto,
           note: note.trim() || null,
           shop: shop?.nome?.trim() ? shop : null,
+          location_id: locationId ? Number(locationId) : null,
         });
         onSaved();
         onClose();
@@ -70,6 +96,7 @@ export default function PurchaseModal({ item, onClose, onSaved }) {
           data_acquisto: dataAcquisto,
           quantita: Math.max(1, parseInt(quantita, 10) || 1),
           shop: shop?.nome?.trim() ? shop : null,
+          location_id: locationId ? Number(locationId) : null,
         });
         onSaved();
         if (res.confronto_prezzo) {
@@ -116,6 +143,12 @@ export default function PurchaseModal({ item, onClose, onSaved }) {
               {item.marca} {item.formato ? `— ${item.formato}` : ""}
             </strong>
           </p>
+        ) : presetProduct ? (
+          <p className="status-msg">
+            <strong>
+              {presetProduct.marca} {presetProduct.formato ? `— ${presetProduct.formato}` : ""}
+            </strong>
+          </p>
         ) : (
           <ProductPicker selected={prodottoScelto} onSelect={handleSelectProduct} />
         )}
@@ -152,7 +185,20 @@ export default function PurchaseModal({ item, onClose, onSaved }) {
             </label>
           )}
         </div>
-        <ShopPicker value={shop?.nome || ""} onChange={setShop} />
+        <div className="humidor-form-row">
+          <ShopPicker value={shop?.nome || ""} onChange={setShop} />
+          <label>
+            Location
+            <select value={locationId} onChange={(e) => setLocationId(e.target.value)}>
+              <option value="">Nessuna</option>
+              {locations.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.nome}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
         {editing && (
           <label>
             Note

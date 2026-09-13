@@ -262,6 +262,39 @@ export async function fetchHumidorStats() {
   return handle(res);
 }
 
+// --- Location humidor (tag: Humidor, Giara, Vetro, ...) ---
+
+export async function fetchLocations() {
+  const res = await fetch(`${API_BASE}/humidor/locations`, { headers: { ...authHeaders() } });
+  return handle(res);
+}
+
+export async function createLocation(nome, colore) {
+  const res = await fetch(`${API_BASE}/humidor/locations`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ nome, colore }),
+  });
+  return handle(res);
+}
+
+export async function updateLocation(id, payload) {
+  const res = await fetch(`${API_BASE}/humidor/locations/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify(payload),
+  });
+  return handle(res);
+}
+
+export async function deleteLocation(id) {
+  const res = await fetch(`${API_BASE}/humidor/locations/${id}`, {
+    method: "DELETE",
+    headers: { ...authHeaders() },
+  });
+  return handle(res);
+}
+
 // --- Impostazioni (backup humidor, versione app) ---
 
 export async function fetchBackups() {

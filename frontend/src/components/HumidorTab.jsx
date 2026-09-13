@@ -16,6 +16,15 @@ function formatData(dateStr) {
 
 const MESI = ["Gen", "Feb", "Mar", "Apr", "Mag", "Giu", "Lug", "Ago", "Set", "Ott", "Nov", "Dic"];
 
+function LocationBadge({ nome, colore }) {
+  if (!nome) return <span className="status-msg small">—</span>;
+  return (
+    <span className="location-badge" style={{ "--location-colore": colore || "#8b5e34" }}>
+      {nome}
+    </span>
+  );
+}
+
 function ProductDetailPage({ prodotto, onBack, onChanged }) {
   const [itemInModifica, setItemInModifica] = useState(null);
 
@@ -35,6 +44,7 @@ function ProductDetailPage({ prodotto, onBack, onChanged }) {
         <thead>
           <tr>
             <th>Rimasti</th>
+            <th>Location</th>
             <th>Prezzo pagato</th>
             <th>Acquistato il</th>
             <th>Tabaccheria</th>
@@ -46,6 +56,9 @@ function ProductDetailPage({ prodotto, onBack, onChanged }) {
             <tr key={it.id}>
               <td>
                 {it.quantita_rimanente} / {it.quantita_iniziale}
+              </td>
+              <td>
+                <LocationBadge nome={it.location_nome} colore={it.location_colore} />
               </td>
               <td className="prezzo-cell">{formatEuro(it.prezzo_acquisto)}</td>
               <td>{formatData(it.data_acquisto)}</td>
@@ -80,6 +93,81 @@ function ProductDetailPage({ prodotto, onBack, onChanged }) {
   );
 }
 
+// Vista dettagliata "libreria": tutti i lotti di tutti i sigari in un'unica
+// tabella piatta e modificabile, invece che raggruppati per sigaro come nella
+// vista slim/per-prodotto.
+function LibraryPage({ items, onBack, onChanged }) {
+  const [itemInModifica, setItemInModifica] = useState(null);
+
+  return (
+    <div className="product-detail-page">
+      <button type="button" className="link-button back-link" onClick={onBack}>
+        ← Torna all'humidor
+      </button>
+      <h2>Libreria sigari</h2>
+
+      {items.length === 0 ? (
+        <p className="status-msg">Il tuo humidor è vuoto.</p>
+      ) : (
+        <table className="results-table product-lots-table">
+          <thead>
+            <tr>
+              <th>Sigaro</th>
+              <th>Rimasti</th>
+              <th>Location</th>
+              <th>Prezzo pagato</th>
+              <th>Acquistato il</th>
+              <th>Tabaccheria</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((it) => (
+              <tr key={it.id}>
+                <td className="marca-cell">
+                  {it.marca}
+                  {it.formato ? ` — ${it.formato}` : ""}
+                </td>
+                <td>
+                  {it.quantita_rimanente} / {it.quantita_iniziale}
+                </td>
+                <td>
+                  <LocationBadge nome={it.location_nome} colore={it.location_colore} />
+                </td>
+                <td className="prezzo-cell">{formatEuro(it.prezzo_acquisto)}</td>
+                <td>{formatData(it.data_acquisto)}</td>
+                <td>{it.shop_nome || "—"}</td>
+                <td className="actions-cell">
+                  <button className="link-button" onClick={() => setItemInModifica(it)}>
+                    Modifica
+                  </button>
+                  <button
+                    className="link-button"
+                    onClick={async () => {
+                      await deleteHumidorItem(it.id);
+                      onChanged();
+                    }}
+                  >
+                    Elimina
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+
+      {itemInModifica && (
+        <PurchaseModal
+          item={itemInModifica}
+          onClose={() => setItemInModifica(null)}
+          onSaved={onChanged}
+        />
+      )}
+    </div>
+  );
+}
+
 export default function HumidorTab({ refreshToken }) {
   const [items, setItems] = useState([]);
   const [stats, setStats] = useState(null);
@@ -87,6 +175,7 @@ export default function HumidorTab({ refreshToken }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [prodottoAperto, setProdottoAperto] = useState(null); // product_id
+  const [libreriaAperta, setLibreriaAperta] = useState(false);
 
   async function loadAll() {
     setLoading(true);
@@ -147,6 +236,12 @@ export default function HumidorTab({ refreshToken }) {
     );
   }
 
+  if (libreriaAperta) {
+    return (
+      <LibraryPage items={items} onBack={() => setLibreriaAperta(false)} onChanged={loadAll} />
+    );
+  }
+
   return (
     <div className="humidor">
       {stats && (
@@ -197,7 +292,14 @@ export default function HumidorTab({ refreshToken }) {
         </div>
       )}
 
-      <h2>Il mio humidor</h2>
+      <div className="humidor-section-header">
+        <h2>Il mio humidor</h2>
+        {prodotti.length > 0 && (
+          <button type="button" className="link-button" onClick={() => setLibreriaAperta(true)}>
+            📖 Vista libreria dettagliata
+          </button>
+        )}
+      </div>
       {prodotti.length === 0 ? (
         <p className="status-msg">
           Il tuo humidor è vuoto. Usa il pulsante 🛒 per registrare il tuo primo acquisto.

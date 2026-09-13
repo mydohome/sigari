@@ -134,7 +134,10 @@ export default function App() {
                 loading={loading}
                 user={user}
                 onRequireLogin={handleRequireLogin}
-                onChanged={runSearch}
+                onChanged={() => {
+                  runSearch();
+                  setHumidorRefresh((v) => v + 1);
+                }}
               />
             ) : (
               <p className="status-msg">Cerca una marca o scegli un filtro per vedere i prezzi.</p>

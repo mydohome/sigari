@@ -5,6 +5,10 @@ import {
   deleteBackup,
   restoreBackup,
   fetchAppVersion,
+  fetchLocations,
+  createLocation,
+  updateLocation,
+  deleteLocation,
 } from "../api.js";
 import { authHeaders } from "../auth.js";
 
@@ -18,6 +22,146 @@ function formatDimensione(bytes) {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function LocationManager() {
+  const [locations, setLocations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [nuovoNome, setNuovoNome] = useState("");
+  const [nuovoColore, setNuovoColore] = useState("#8b5e34");
+  const [salvando, setSalvando] = useState(false);
+  const [errore, setErrore] = useState(null);
+  const [modificaId, setModificaId] = useState(null);
+  const [modificaNome, setModificaNome] = useState("");
+  const [modificaColore, setModificaColore] = useState("#8b5e34");
+
+  async function load() {
+    setLoading(true);
+    try {
+      const data = await fetchLocations();
+      setLocations(data.locations || []);
+    } catch (err) {
+      setErrore(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  async function handleAggiungi(e) {
+    e.preventDefault();
+    if (!nuovoNome.trim()) return;
+    setSalvando(true);
+    setErrore(null);
+    try {
+      await createLocation(nuovoNome.trim(), nuovoColore);
+      setNuovoNome("");
+      setNuovoColore("#8b5e34");
+      await load();
+    } catch (err) {
+      setErrore(err.message);
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  function iniziaModifica(loc) {
+    setModificaId(loc.id);
+    setModificaNome(loc.nome);
+    setModificaColore(loc.colore);
+  }
+
+  async function salvaModifica() {
+    setErrore(null);
+    try {
+      await updateLocation(modificaId, { nome: modificaNome.trim(), colore: modificaColore });
+      setModificaId(null);
+      await load();
+    } catch (err) {
+      setErrore(err.message);
+    }
+  }
+
+  async function handleElimina(loc) {
+    if (
+      !window.confirm(
+        `Eliminare la location "${loc.nome}"? I lotti che la usano resteranno senza location.`
+      )
+    )
+      return;
+    setErrore(null);
+    try {
+      await deleteLocation(loc.id);
+      await load();
+    } catch (err) {
+      setErrore(err.message);
+    }
+  }
+
+  return (
+    <div className="location-manager">
+      {errore && <p className="error-msg small">{errore}</p>}
+      {loading ? (
+        <p className="status-msg small">Caricamento location...</p>
+      ) : locations.length === 0 ? (
+        <p className="status-msg small">Nessuna location definita.</p>
+      ) : (
+        <ul className="location-list">
+          {locations.map((loc) => (
+            <li key={loc.id}>
+              {modificaId === loc.id ? (
+                <>
+                  <input
+                    type="color"
+                    value={modificaColore}
+                    onChange={(e) => setModificaColore(e.target.value)}
+                  />
+                  <input
+                    type="text"
+                    value={modificaNome}
+                    onChange={(e) => setModificaNome(e.target.value)}
+                  />
+                  <button type="button" className="link-button" onClick={salvaModifica}>
+                    Salva
+                  </button>
+                  <button type="button" className="link-button" onClick={() => setModificaId(null)}>
+                    Annulla
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span className="location-badge" style={{ "--location-colore": loc.colore }}>
+                    {loc.nome}
+                  </span>
+                  <button type="button" className="link-button" onClick={() => iniziaModifica(loc)}>
+                    Modifica
+                  </button>
+                  <button type="button" className="link-button" onClick={() => handleElimina(loc)}>
+                    Elimina
+                  </button>
+                </>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+      <form className="location-add-form" onSubmit={handleAggiungi}>
+        <input type="color" value={nuovoColore} onChange={(e) => setNuovoColore(e.target.value)} />
+        <input
+          type="text"
+          placeholder="Nuova location (es. Cantina)"
+          value={nuovoNome}
+          onChange={(e) => setNuovoNome(e.target.value)}
+        />
+        <button type="submit" disabled={salvando || !nuovoNome.trim()}>
+          {salvando ? "Aggiungo..." : "Aggiungi location"}
+        </button>
+      </form>
+    </div>
+  );
 }
 
 export default function SettingsTab() {
@@ -149,6 +293,13 @@ export default function SettingsTab() {
       ) : (
         <p className="status-msg small">Verifica versione non disponibile.</p>
       )}
+
+      <h2>Configurazione</h2>
+      <p className="status-msg small">
+        Location dove conservi i sigari (Humidor, Giara, Vetro, ...): usale per organizzare gli
+        acquisti. "Humidor" viene proposta di default quando registri un nuovo acquisto.
+      </p>
+      <LocationManager />
 
       <h2>Backup humidor</h2>
       <p className="status-msg small">

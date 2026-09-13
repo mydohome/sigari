@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import ReviewPanel from "./ReviewPanel.jsx";
+import PurchaseModal from "./PurchaseModal.jsx";
 import { addFavorite, removeFavorite, addToWishlist } from "../api.js";
 
 function formatEuro(value) {
@@ -15,6 +16,7 @@ function formatData(dateStr) {
 export default function ResultsTable({ results, loading, user, onRequireLogin, onChanged }) {
   const [expandedId, setExpandedId] = useState(null);
   const [busyId, setBusyId] = useState(null);
+  const [acquistoRow, setAcquistoRow] = useState(null);
 
   if (loading) return <p className="status-msg">Caricamento risultati...</p>;
   if (!results.length) return <p className="status-msg">Nessun risultato trovato.</p>;
@@ -46,6 +48,7 @@ export default function ResultsTable({ results, loading, user, onRequireLogin, o
   }
 
   return (
+    <>
     <table className="results-table">
       <thead>
         <tr>
@@ -91,6 +94,13 @@ export default function ResultsTable({ results, loading, user, onRequireLogin, o
                   {r.in_wishlist ? "✓" : "+ 🛒"}
                 </button>
                 <button
+                  className="icon-button"
+                  title="Registra acquisto"
+                  onClick={() => (user ? setAcquistoRow(r) : onRequireLogin())}
+                >
+                  🛍️
+                </button>
+                <button
                   className="link-button"
                   onClick={() => setExpandedId(expandedId === r.product_id ? null : r.product_id)}
                 >
@@ -109,5 +119,13 @@ export default function ResultsTable({ results, loading, user, onRequireLogin, o
         ))}
       </tbody>
     </table>
+    {acquistoRow && (
+      <PurchaseModal
+        presetProduct={acquistoRow}
+        onClose={() => setAcquistoRow(null)}
+        onSaved={() => onChanged?.()}
+      />
+    )}
+    </>
   );
 }

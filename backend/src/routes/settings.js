@@ -19,6 +19,7 @@ const FILENAME_RE = /^humidor-backup-[0-9T:.-]+\.json$/;
 const TABELLE_HUMIDOR = [
   "users",
   "humidor_shops",
+  "humidor_locations",
   "humidor_items",
   "humidor_fumate",
   "humidor_reviews",

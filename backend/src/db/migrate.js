@@ -115,11 +115,21 @@ CREATE TABLE IF NOT EXISTS humidor_shops (
 
 CREATE INDEX IF NOT EXISTS idx_humidor_shops_nome_lower ON humidor_shops (LOWER(nome));
 
+-- Location fisiche dove si conservano i sigari (es. Humidor, Giara, Vetro),
+-- gestibili dall'utente come "tag" colorati in Impostazioni > Configurazione.
+CREATE TABLE IF NOT EXISTS humidor_locations (
+  id SERIAL PRIMARY KEY,
+  nome TEXT NOT NULL UNIQUE,
+  colore TEXT NOT NULL DEFAULT '#8b5e34',
+  created_at TIMESTAMP NOT NULL DEFAULT now()
+);
+
 CREATE TABLE IF NOT EXISTS humidor_items (
   id SERIAL PRIMARY KEY,
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
   shop_id INTEGER REFERENCES humidor_shops(id) ON DELETE SET NULL,
+  location_id INTEGER REFERENCES humidor_locations(id) ON DELETE SET NULL,
   prezzo_acquisto NUMERIC(10,2) NOT NULL,
   data_acquisto DATE NOT NULL,
   quantita_iniziale INTEGER NOT NULL DEFAULT 1,
@@ -128,8 +138,12 @@ CREATE TABLE IF NOT EXISTS humidor_items (
   created_at TIMESTAMP NOT NULL DEFAULT now()
 );
 
+-- Aggiunge la colonna anche su database gia' esistenti creati prima di questa modifica
+ALTER TABLE humidor_items ADD COLUMN IF NOT EXISTS location_id INTEGER REFERENCES humidor_locations(id) ON DELETE SET NULL;
+
 CREATE INDEX IF NOT EXISTS idx_humidor_items_user ON humidor_items (user_id);
 CREATE INDEX IF NOT EXISTS idx_humidor_items_product ON humidor_items (product_id);
+CREATE INDEX IF NOT EXISTS idx_humidor_items_location ON humidor_items (location_id);
 
 CREATE TABLE IF NOT EXISTS humidor_fumate (
   id SERIAL PRIMARY KEY,
@@ -172,11 +186,24 @@ async function backfillProvenienza(client) {
   }
 }
 
+// Le prime 3 location sono create automaticamente al primo avvio; l'utente
+// puo' poi aggiungerne/modificarne/rimuoverne altre da Impostazioni > Configurazione.
+async function seedLocations(client) {
+  await client.query(
+    `INSERT INTO humidor_locations (nome, colore) VALUES
+       ('Humidor', '#8b5e34'),
+       ('Giara', '#4a90d9'),
+       ('Vetro', '#43a047')
+     ON CONFLICT (nome) DO NOTHING`
+  );
+}
+
 async function migrate() {
   const client = await pool.connect();
   try {
     await client.query(SCHEMA_SQL);
     await backfillProvenienza(client);
+    await seedLocations(client);
     console.log("Migrazione completata: schema aggiornato.");
   } finally {
     client.release();

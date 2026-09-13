@@ -76,6 +76,15 @@ router.get("/shops/search-external", async (req, res) => {
   }
 });
 
+// Recupera l'id della location proposta di default ("Humidor") quando
+// l'utente non ne sceglie una esplicitamente.
+async function getDefaultLocationId(client) {
+  const { rows } = await client.query(
+    "SELECT id FROM humidor_locations WHERE nome = 'Humidor' LIMIT 1"
+  );
+  return rows[0]?.id ?? null;
+}
+
 // GET /api/humidor/items?all=1 - inventario dell'utente
 router.get("/items", async (req, res) => {
   const includeVuoti = req.query.all === "1";
@@ -85,10 +94,12 @@ router.get("/items", async (req, res) => {
          hi.id, hi.prezzo_acquisto, hi.data_acquisto, hi.quantita_iniziale,
          hi.quantita_rimanente, hi.note,
          p.id AS product_id, p.marca, p.categoria, p.formato,
-         s.id AS shop_id, s.nome AS shop_nome, s.indirizzo AS shop_indirizzo
+         s.id AS shop_id, s.nome AS shop_nome, s.indirizzo AS shop_indirizzo,
+         l.id AS location_id, l.nome AS location_nome, l.colore AS location_colore
        FROM humidor_items hi
        JOIN products p ON p.id = hi.product_id
        LEFT JOIN humidor_shops s ON s.id = hi.shop_id
+       LEFT JOIN humidor_locations l ON l.id = hi.location_id
        WHERE hi.user_id = $1 ${includeVuoti ? "" : "AND hi.quantita_rimanente > 0"}
        ORDER BY hi.data_acquisto DESC, hi.id DESC`,
       [req.userId]
@@ -100,9 +111,80 @@ router.get("/items", async (req, res) => {
   }
 });
 
+// GET /api/humidor/locations - location disponibili (tag per organizzare l'humidor)
+router.get("/locations", async (_req, res) => {
+  try {
+    const { rows } = await pool.query(
+      "SELECT id, nome, colore FROM humidor_locations ORDER BY nome ASC"
+    );
+    res.json({ locations: rows });
+  } catch (err) {
+    console.error("Errore elenco location:", err);
+    res.status(500).json({ error: "Errore nel recupero delle location." });
+  }
+});
+
+// POST /api/humidor/locations { nome, colore }
+router.post("/locations", async (req, res) => {
+  const nome = (req.body?.nome || "").trim();
+  const colore = (req.body?.colore || "").trim();
+  if (!nome) return res.status(400).json({ error: "Il nome della location è richiesto." });
+  try {
+    const { rows } = await pool.query(
+      "INSERT INTO humidor_locations (nome, colore) VALUES ($1, COALESCE(NULLIF($2, ''), '#8b5e34')) RETURNING id, nome, colore",
+      [nome, colore]
+    );
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    if (err.code === "23505") {
+      return res.status(409).json({ error: "Esiste già una location con questo nome." });
+    }
+    console.error("Errore creazione location:", err);
+    res.status(500).json({ error: "Errore nella creazione della location." });
+  }
+});
+
+// PATCH /api/humidor/locations/:id { nome?, colore? }
+router.patch("/locations/:id", async (req, res) => {
+  const nome = req.body?.nome !== undefined ? req.body.nome.trim() : null;
+  const colore = req.body?.colore !== undefined ? req.body.colore.trim() : null;
+  try {
+    const { rows } = await pool.query(
+      `UPDATE humidor_locations SET
+         nome = COALESCE(NULLIF($1, ''), nome),
+         colore = COALESCE(NULLIF($2, ''), colore)
+       WHERE id = $3 RETURNING id, nome, colore`,
+      [nome, colore, req.params.id]
+    );
+    if (!rows.length) return res.status(404).json({ error: "Location non trovata." });
+    res.json(rows[0]);
+  } catch (err) {
+    if (err.code === "23505") {
+      return res.status(409).json({ error: "Esiste già una location con questo nome." });
+    }
+    console.error("Errore aggiornamento location:", err);
+    res.status(500).json({ error: "Errore nell'aggiornamento della location." });
+  }
+});
+
+// DELETE /api/humidor/locations/:id
+router.delete("/locations/:id", async (req, res) => {
+  try {
+    const result = await pool.query(
+      "DELETE FROM humidor_locations WHERE id = $1 RETURNING id",
+      [req.params.id]
+    );
+    if (!result.rows.length) return res.status(404).json({ error: "Location non trovata." });
+    res.json({ message: "Location eliminata." });
+  } catch (err) {
+    console.error("Errore eliminazione location:", err);
+    res.status(500).json({ error: "Errore nell'eliminazione della location." });
+  }
+});
+
 // POST /api/humidor/items - registra un acquisto (e ne verifica il prezzo)
 router.post("/items", async (req, res) => {
-  const { product_id, prezzo_acquisto, data_acquisto, quantita = 1, shop, note } = req.body || {};
+  const { product_id, prezzo_acquisto, data_acquisto, quantita = 1, shop, note, location_id } = req.body || {};
   if (!product_id || !prezzo_acquisto || !data_acquisto) {
     return res
       .status(400)
@@ -114,11 +196,12 @@ router.post("/items", async (req, res) => {
   try {
     await client.query("BEGIN");
     const shopId = await findOrCreateShop(client, req.userId, shop);
+    const locationId = location_id || (await getDefaultLocationId(client));
     const inserted = await client.query(
       `INSERT INTO humidor_items
-         (user_id, product_id, shop_id, prezzo_acquisto, data_acquisto, quantita_iniziale, quantita_rimanente, note)
-       VALUES ($1, $2, $3, $4, $5, $6, $6, $7) RETURNING id`,
-      [req.userId, product_id, shopId, prezzo_acquisto, data_acquisto, quantita, note || null]
+         (user_id, product_id, shop_id, location_id, prezzo_acquisto, data_acquisto, quantita_iniziale, quantita_rimanente, note)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $7, $8) RETURNING id`,
+      [req.userId, product_id, shopId, locationId, prezzo_acquisto, data_acquisto, quantita, note || null]
     );
     newId = inserted.rows[0].id;
     await client.query("COMMIT");
@@ -155,7 +238,7 @@ router.post("/items", async (req, res) => {
 
 // PATCH /api/humidor/items/:id - modifica prezzo/data/tabaccheria/note
 router.patch("/items/:id", async (req, res) => {
-  const { prezzo_acquisto, data_acquisto, note, shop } = req.body || {};
+  const { prezzo_acquisto, data_acquisto, note, shop, location_id } = req.body || {};
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -175,9 +258,10 @@ router.patch("/items/:id", async (req, res) => {
          prezzo_acquisto = COALESCE($1, prezzo_acquisto),
          data_acquisto = COALESCE($2, data_acquisto),
          note = COALESCE($3, note),
-         shop_id = COALESCE($4, shop_id)
-       WHERE id = $5`,
-      [prezzo_acquisto ?? null, data_acquisto ?? null, note ?? null, shopId ?? null, req.params.id]
+         shop_id = COALESCE($4, shop_id),
+         location_id = COALESCE($5, location_id)
+       WHERE id = $6`,
+      [prezzo_acquisto ?? null, data_acquisto ?? null, note ?? null, shopId ?? null, location_id ?? null, req.params.id]
     );
     await client.query("COMMIT");
     res.json({ message: "Acquisto aggiornato." });
