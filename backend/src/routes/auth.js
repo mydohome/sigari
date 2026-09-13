@@ -14,6 +14,18 @@ function signToken(userId) {
   return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: "30d" });
 }
 
+// GET /api/auth/registration-open - la registrazione e' consentita solo finche'
+// non esiste ancora nessun utente (app ad uso personale/familiare).
+router.get("/registration-open", async (_req, res) => {
+  try {
+    const { rows } = await pool.query("SELECT COUNT(*)::int AS totale FROM users");
+    res.json({ open: rows[0].totale === 0 });
+  } catch (err) {
+    console.error("Errore verifica registrazione aperta:", err);
+    res.status(500).json({ error: "Errore nella verifica dello stato di registrazione." });
+  }
+});
+
 router.post("/register", async (req, res) => {
   const { email, password } = req.body || {};
 
@@ -25,6 +37,11 @@ router.post("/register", async (req, res) => {
   }
 
   try {
+    const totaleUtenti = await pool.query("SELECT COUNT(*)::int AS totale FROM users");
+    if (totaleUtenti.rows[0].totale > 0) {
+      return res.status(403).json({ error: "La registrazione non è più disponibile." });
+    }
+
     const existing = await pool.query("SELECT 1 FROM users WHERE email = $1", [
       email.toLowerCase().trim(),
     ]);

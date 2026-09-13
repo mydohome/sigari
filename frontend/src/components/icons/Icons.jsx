@@ -41,45 +41,70 @@ export function IconGenieLamp({ size = 22 }) {
   );
 }
 
-// Humidor: piccolo baule/scatola stilizzata
+// Humidor: baule aperto con igrometro sul coperchio, sigari e serratura
 export function IconHumidor({ size = 22 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <rect x="3.5" y="10" width="17" height="9.5" rx="1.5" stroke="currentColor" strokeWidth="1.8" />
+      {/* coperchio inclinato con igrometro */}
       <path
-        d="M3.5 10c0-2.9 0-5.3 8.5-5.3S20.5 7.1 20.5 10"
+        d="M4.2 10.2L5 3.6a1 1 0 011-.9h10a1 1 0 011 .9l.8 6.6"
         stroke="currentColor"
-        strokeWidth="1.8"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+      <circle cx="12" cy="6.3" r="1.9" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M12 6.3V5.3M12 6.3l0.8 0.5" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
+
+      {/* sigari appena sotto il bordo */}
+      <path
+        d="M6.6 10.4l2.6-1.7M10.2 10.4l2.6-1.7M13.8 10.4l2.6-1.7"
+        stroke="currentColor"
+        strokeWidth="1.3"
         strokeLinecap="round"
       />
-      <circle cx="12" cy="14.6" r="1.15" fill="currentColor" />
+
+      {/* corpo del baule */}
+      <rect x="3" y="10.2" width="18" height="9.4" rx="1.6" stroke="currentColor" strokeWidth="1.5" />
+      <circle cx="12" cy="14.6" r="1.05" fill="currentColor" />
+      <line x1="12" y1="15.5" x2="12" y2="16.6" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" />
+
+      {/* piedini */}
+      <path d="M5.3 19.6v1M18.7 19.6v1" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
     </svg>
   );
 }
 
-// Sigaro acceso con fumo, pulito a due colori — per il pulsante "registra fumata"
-export function IconCigarLit({ size = 30 }) {
+// Sigaro acceso con fumo, monolinea bianca pulita — per il pulsante "registra fumata"
+// (il cerchio scuro di sfondo e' gia' dato dal bottone .fab-cigar)
+export function IconCigarLit({ size = 28 }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" aria-hidden="true">
       <path
-        d="M22 12c-2.2 2.4-2.2 5.7 0 8.1"
-        fill="none"
-        stroke="var(--oro-chiaro, #e9c46a)"
-        strokeWidth="1.6"
+        d="M9 9c-3 3-3 6.5 0 9.5"
+        stroke="#f6ede0"
+        strokeWidth="1.7"
         strokeLinecap="round"
-        opacity="0.85"
+        opacity="0.9"
       />
       <path
-        d="M19 10.4c-1.8 2.7-1.8 6.5 0 9.2"
-        fill="none"
-        stroke="var(--oro-chiaro, #e9c46a)"
-        strokeWidth="1.6"
+        d="M12.4 6.8c-3.6 3.7-3.6 8 0 11.7"
+        stroke="#f6ede0"
+        strokeWidth="1.7"
         strokeLinecap="round"
         opacity="0.6"
       />
-      <rect x="4" y="13.5" width="17" height="5" rx="2.5" fill="var(--tabacco-500, #8a5a2b)" />
-      <ellipse cx="23.3" cy="16" rx="2.6" ry="3.1" fill="var(--brace, #e2662d)" />
-      <ellipse cx="24.6" cy="16" rx="1.1" ry="1.9" fill="#f6b04b" />
+      <rect
+        x="10"
+        y="17"
+        width="16"
+        height="6.4"
+        rx="3.2"
+        transform="rotate(-18 10 17)"
+        stroke="#f6ede0"
+        strokeWidth="1.7"
+      />
+      <circle cx="8.4" cy="21.6" r="3.4" stroke="#f6ede0" strokeWidth="1.7" />
+      <circle cx="8.4" cy="21.6" r="1.1" fill="#f6ede0" />
     </svg>
   );
 }

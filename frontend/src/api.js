@@ -56,6 +56,11 @@ export async function fetchAutocomplete(q) {
 
 // --- Autenticazione ---
 
+export async function fetchRegistrationOpen() {
+  const res = await fetch(`${API_BASE}/auth/registration-open`);
+  return handle(res);
+}
+
 export async function register(email, password) {
   const res = await fetch(`${API_BASE}/auth/register`, {
     method: "POST",

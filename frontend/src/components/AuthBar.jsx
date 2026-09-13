@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { login, register } from "../api.js";
+import React, { useEffect, useState } from "react";
+import { login, register, fetchRegistrationOpen } from "../api.js";
 import { saveSession } from "../auth.js";
 
 export default function AuthBar({ user, onAuthChange, onLogout }) {
@@ -9,6 +9,13 @@ export default function AuthBar({ user, onAuthChange, onLogout }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [registrazioneAperta, setRegistrazioneAperta] = useState(false);
+
+  useEffect(() => {
+    fetchRegistrationOpen()
+      .then((data) => setRegistrazioneAperta(data.open))
+      .catch(() => setRegistrazioneAperta(false));
+  }, []);
 
   if (user) {
     return (
@@ -44,26 +51,28 @@ export default function AuthBar({ user, onAuthChange, onLogout }) {
     <div className="auth-bar">
       {!open ? (
         <button className="link-button" onClick={() => setOpen(true)}>
-          Accedi / Registrati
+          {registrazioneAperta ? "Accedi / Registrati" : "Accedi"}
         </button>
       ) : (
         <form className="auth-form" onSubmit={handleSubmit}>
-          <div className="auth-tabs">
-            <button
-              type="button"
-              className={mode === "login" ? "active" : ""}
-              onClick={() => setMode("login")}
-            >
-              Accedi
-            </button>
-            <button
-              type="button"
-              className={mode === "register" ? "active" : ""}
-              onClick={() => setMode("register")}
-            >
-              Registrati
-            </button>
-          </div>
+          {registrazioneAperta && (
+            <div className="auth-tabs">
+              <button
+                type="button"
+                className={mode === "login" ? "active" : ""}
+                onClick={() => setMode("login")}
+              >
+                Accedi
+              </button>
+              <button
+                type="button"
+                className={mode === "register" ? "active" : ""}
+                onClick={() => setMode("register")}
+              >
+                Registrati
+              </button>
+            </div>
+          )}
           <input
             type="email"
             placeholder="Email"

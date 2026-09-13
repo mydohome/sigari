@@ -8,40 +8,48 @@ export default function Logo({ size = 44 }) {
       height={size}
       viewBox="0 0 64 64"
       role="img"
-      aria-label="Sigari Italia"
+      aria-label="Sigari Track"
     >
-      <defs>
-        <linearGradient id="logoLeaf" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#8a5a2b" />
-          <stop offset="100%" stopColor="#5c3a1e" />
-        </linearGradient>
-      </defs>
+      <circle cx="32" cy="32" r="31" fill="#241209" />
 
-      {/* corpo del sigaro */}
-      <rect x="6" y="27" width="46" height="10" rx="5" fill="url(#logoLeaf)" />
-      <rect x="6" y="27" width="46" height="10" rx="5" fill="black" opacity="0.08" />
-
-      {/* brace accesa */}
-      <ellipse cx="55" cy="32" rx="4.5" ry="5.5" fill="#e2662d" />
-      <ellipse cx="57.5" cy="32" rx="2" ry="3.2" fill="#f6b04b" />
-
-      {/* fumo lento */}
       <path
-        d="M55 20c-3 2-3 5 0 7s3 5 0 7"
+        d="M15 30c-6 4-6 10 0 14s6 10 0 14"
         fill="none"
-        stroke="currentColor"
-        strokeOpacity="0.35"
-        strokeWidth="2"
+        stroke="#f3e9d8"
+        strokeOpacity="0.9"
+        strokeWidth="2.6"
+        strokeLinecap="round"
+      />
+      <path
+        d="M20 24c-5 4-5 9 0 13"
+        fill="none"
+        stroke="#f3e9d8"
+        strokeOpacity="0.7"
+        strokeWidth="2.2"
         strokeLinecap="round"
       />
 
-      {/* fascia (band) */}
-      <rect x="20" y="24" width="12" height="16" rx="1.5" fill="#f1c744" />
-      <rect x="20" y="24" width="12" height="16" rx="1.5" fill="none" stroke="#8a1f1f" strokeWidth="1.4" />
-      <path
-        d="M26 28.5l1.4 2.9 3.1.4-2.3 2.2.6 3.1-2.8-1.5-2.8 1.5.6-3.1-2.3-2.2 3.1-.4z"
-        fill="#8a1f1f"
-      />
+      <g transform="rotate(-32 32 34)">
+        <rect x="14" y="27" width="38" height="13" rx="6.5" fill="#8a5a2b" />
+        <rect x="14" y="27" width="38" height="13" rx="6.5" fill="#000" opacity="0.06" />
+
+        <rect x="12" y="28.6" width="7" height="9.8" rx="3.4" fill="#3a2c22" />
+        <circle cx="14.5" cy="33.5" r="3.1" fill="#e2662d" />
+        <circle cx="13.6" cy="33.5" r="1.4" fill="#f6b04b" />
+
+        <rect x="33" y="25.2" width="11.5" height="16.6" rx="2" fill="#c8451f" />
+        <rect x="33" y="25.2" width="11.5" height="16.6" rx="2" fill="none" stroke="#e9c46a" strokeWidth="1.3" />
+        <circle
+          cx="38.7"
+          cy="33.5"
+          r="4.6"
+          fill="none"
+          stroke="#e9c46a"
+          strokeWidth="1"
+          strokeDasharray="1.4 1.4"
+        />
+        <path d="M38.7 30.6l1 2.1 2.3.3-1.7 1.6.4 2.3-2-1.1-2 1.1.4-2.3-1.7-1.6 2.3-.3z" fill="#e9c46a" />
+      </g>
     </svg>
   );
 }

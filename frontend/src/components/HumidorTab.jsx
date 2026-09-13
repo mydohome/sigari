@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { fetchHumidorItems, deleteHumidorItem, fetchFumate, undoFumata, fetchHumidorStats } from "../api.js";
 import BarChart from "./BarChart.jsx";
 import HumidorReviewEditor from "./HumidorReviewEditor.jsx";
 import PurchaseModal from "./PurchaseModal.jsx";
+import Modal from "./Modal.jsx";
 
 function formatEuro(value) {
   if (value === null || value === undefined) return "—";
@@ -16,14 +17,69 @@ function formatData(dateStr) {
 
 const MESI = ["Gen", "Feb", "Mar", "Apr", "Mag", "Giu", "Lug", "Ago", "Set", "Ott", "Nov", "Dic"];
 
+function ProductDetailModal({ prodotto, onClose, onChanged }) {
+  const [itemInModifica, setItemInModifica] = useState(null);
+
+  return (
+    <Modal title={`${prodotto.marca}${prodotto.formato ? ` — ${prodotto.formato}` : ""}`} onClose={onClose}>
+      <HumidorReviewEditor productId={prodotto.product_id} />
+
+      <table className="results-table product-lots-table">
+        <thead>
+          <tr>
+            <th>Rimasti</th>
+            <th>Prezzo pagato</th>
+            <th>Acquistato il</th>
+            <th>Tabaccheria</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {prodotto.lotti.map((it) => (
+            <tr key={it.id}>
+              <td>
+                {it.quantita_rimanente} / {it.quantita_iniziale}
+              </td>
+              <td className="prezzo-cell">{formatEuro(it.prezzo_acquisto)}</td>
+              <td>{formatData(it.data_acquisto)}</td>
+              <td>{it.shop_nome || "—"}</td>
+              <td className="actions-cell">
+                <button className="link-button" onClick={() => setItemInModifica(it)}>
+                  Modifica
+                </button>
+                <button
+                  className="link-button"
+                  onClick={async () => {
+                    await deleteHumidorItem(it.id);
+                    onChanged();
+                  }}
+                >
+                  Elimina
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      {itemInModifica && (
+        <PurchaseModal
+          item={itemInModifica}
+          onClose={() => setItemInModifica(null)}
+          onSaved={onChanged}
+        />
+      )}
+    </Modal>
+  );
+}
+
 export default function HumidorTab({ refreshToken }) {
   const [items, setItems] = useState([]);
   const [stats, setStats] = useState(null);
   const [fumate, setFumate] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [recensioneAperta, setRecensioneAperta] = useState(null);
-  const [itemInModifica, setItemInModifica] = useState(null);
+  const [prodottoAperto, setProdottoAperto] = useState(null); // product_id
 
   async function loadAll() {
     setLoading(true);
@@ -45,10 +101,24 @@ export default function HumidorTab({ refreshToken }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshToken]);
 
-  async function handleDeleteItem(id) {
-    await deleteHumidorItem(id);
-    await loadAll();
-  }
+  const prodotti = useMemo(() => {
+    const mappa = new Map();
+    for (const it of items) {
+      if (!mappa.has(it.product_id)) {
+        mappa.set(it.product_id, {
+          product_id: it.product_id,
+          marca: it.marca,
+          formato: it.formato,
+          totale: 0,
+          lotti: [],
+        });
+      }
+      const p = mappa.get(it.product_id);
+      p.totale += it.quantita_rimanente;
+      p.lotti.push(it);
+    }
+    return [...mappa.values()].sort((a, b) => a.marca.localeCompare(b.marca));
+  }, [items]);
 
   async function handleUndoFumata(id) {
     await undoFumata(id);
@@ -57,6 +127,8 @@ export default function HumidorTab({ refreshToken }) {
 
   if (loading) return <p className="status-msg">Caricamento humidor...</p>;
   if (error) return <p className="error-msg">{error}</p>;
+
+  const prodottoSelezionato = prodotti.find((p) => p.product_id === prodottoAperto);
 
   return (
     <div className="humidor">
@@ -109,63 +181,24 @@ export default function HumidorTab({ refreshToken }) {
       )}
 
       <h2>Il mio humidor</h2>
-      {items.length === 0 ? (
+      {prodotti.length === 0 ? (
         <p className="status-msg">
           Il tuo humidor è vuoto. Usa il pulsante 🛒 per registrare il tuo primo acquisto.
         </p>
       ) : (
-        <table className="results-table">
-          <thead>
-            <tr>
-              <th>Marca</th>
-              <th>Formato</th>
-              <th>Rimasti</th>
-              <th>Prezzo pagato</th>
-              <th>Acquistato il</th>
-              <th>Tabaccheria</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((it) => (
-              <React.Fragment key={it.id}>
-                <tr>
-                  <td className="marca-cell">{it.marca}</td>
-                  <td>{it.formato || "—"}</td>
-                  <td>
-                    {it.quantita_rimanente} / {it.quantita_iniziale}
-                  </td>
-                  <td className="prezzo-cell">{formatEuro(it.prezzo_acquisto)}</td>
-                  <td>{formatData(it.data_acquisto)}</td>
-                  <td>{it.shop_nome || "—"}</td>
-                  <td className="actions-cell">
-                    <button className="link-button" onClick={() => setItemInModifica(it)}>
-                      Modifica
-                    </button>
-                    <button
-                      className="link-button"
-                      onClick={() =>
-                        setRecensioneAperta(recensioneAperta === it.product_id ? null : it.product_id)
-                      }
-                    >
-                      {recensioneAperta === it.product_id ? "Chiudi" : "Recensisci"}
-                    </button>
-                    <button className="link-button" onClick={() => handleDeleteItem(it.id)}>
-                      Elimina
-                    </button>
-                  </td>
-                </tr>
-                {recensioneAperta === it.product_id && (
-                  <tr className="expanded-row">
-                    <td colSpan={7}>
-                      <HumidorReviewEditor productId={it.product_id} />
-                    </td>
-                  </tr>
-                )}
-              </React.Fragment>
-            ))}
-          </tbody>
-        </table>
+        <ul className="humidor-slim-list">
+          {prodotti.map((p) => (
+            <li key={p.product_id}>
+              <button type="button" onClick={() => setProdottoAperto(p.product_id)}>
+                <span className="humidor-slim-desc">
+                  {p.marca}
+                  {p.formato ? ` — ${p.formato}` : ""}
+                </span>
+                <span className="humidor-slim-qty">× {p.totale}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
       )}
 
       {fumate.length > 0 && (
@@ -187,11 +220,11 @@ export default function HumidorTab({ refreshToken }) {
         </>
       )}
 
-      {itemInModifica && (
-        <PurchaseModal
-          item={itemInModifica}
-          onClose={() => setItemInModifica(null)}
-          onSaved={loadAll}
+      {prodottoSelezionato && (
+        <ProductDetailModal
+          prodotto={prodottoSelezionato}
+          onClose={() => setProdottoAperto(null)}
+          onChanged={loadAll}
         />
       )}
     </div>

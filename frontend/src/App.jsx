@@ -5,6 +5,7 @@ import AuthBar from "./components/AuthBar.jsx";
 import FavoritesTab from "./components/FavoritesTab.jsx";
 import WishlistTab from "./components/WishlistTab.jsx";
 import HumidorTab from "./components/HumidorTab.jsx";
+import HumidorDashboard from "./components/HumidorDashboard.jsx";
 import GlobalActions from "./components/GlobalActions.jsx";
 import Logo from "./components/Logo.jsx";
 import { IconSearch, IconStar, IconGenieLamp, IconHumidor } from "./components/icons/Icons.jsx";
@@ -78,10 +79,7 @@ export default function App() {
             <Logo />
             <div>
               <h1>Sigari Track</h1>
-              <p className="subtitle">
-                Prezzi aggiornati ogni settimana dalle tariffe ufficiali ADM, humidor e fumate sotto
-                controllo.
-              </p>
+              <p className="subtitle">Il tuo humidor, le tue fumate, i prezzi sempre aggiornati.</p>
             </div>
           </div>
           <AuthBar user={user} onAuthChange={setUser} onLogout={handleLogout} />
@@ -102,6 +100,7 @@ export default function App() {
 
         {tab === "ricerca" && (
           <>
+            {user && <HumidorDashboard refreshToken={humidorRefresh} />}
             <SearchBar
               q={q}
               setQ={setQ}

@@ -536,7 +536,76 @@ footer a {
   color: var(--bordeaux);
 }
 
+/* --- Dashboard (home, se loggato) --- */
+
+.dashboard {
+  margin-bottom: 1.6rem;
+}
+
+.dashboard-title {
+  margin: 0 0 0.6rem;
+  font-size: 1.15rem;
+  color: var(--tabacco-800);
+}
+
+.dashboard-stats .stat-card {
+  padding: 0.65rem 0.5rem;
+}
+
+.dashboard-stats .stat-value {
+  font-size: 1.25rem;
+}
+
 /* --- Humidor --- */
+
+.humidor-slim-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: var(--crema-carta);
+  border: 1px solid #e2d4bd;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.humidor-slim-list li + li {
+  border-top: 1px solid #ece1cd;
+}
+
+.humidor-slim-list button {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.8rem 1rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-size: 0.95rem;
+  color: var(--testo);
+}
+
+.humidor-slim-list button:hover {
+  background: #fbf3e3;
+}
+
+.humidor-slim-desc {
+  font-weight: 600;
+  color: var(--tabacco-800);
+}
+
+.humidor-slim-qty {
+  color: var(--bordeaux);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.product-lots-table {
+  margin-top: 1rem;
+}
 
 .humidor h2 {
   margin: 2rem 0 0.8rem;
