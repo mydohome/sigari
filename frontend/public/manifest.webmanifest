@@ -1,0 +1,16 @@
+{
+  "name": "Prezzi Sigari Italia",
+  "short_name": "Sigari",
+  "description": "Prezzi, humidor e fumate dei tuoi sigari",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#241209",
+  "theme_color": "#241209",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

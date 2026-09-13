@@ -154,3 +154,90 @@ export async function generateReview(productId) {
   });
   return handle(res);
 }
+
+// --- Humidor ---
+
+export async function fetchHumidorShops(q) {
+  const params = new URLSearchParams();
+  if (q) params.set("q", q);
+  const res = await fetch(`${API_BASE}/humidor/shops?${params.toString()}`, {
+    headers: { ...authHeaders() },
+  });
+  return handle(res);
+}
+
+export async function searchExternalShops(q) {
+  const res = await fetch(`${API_BASE}/humidor/shops/search-external?q=${encodeURIComponent(q)}`, {
+    headers: { ...authHeaders() },
+  });
+  return handle(res);
+}
+
+export async function fetchHumidorItems(all = false) {
+  const res = await fetch(`${API_BASE}/humidor/items${all ? "?all=1" : ""}`, {
+    headers: { ...authHeaders() },
+  });
+  return handle(res);
+}
+
+export async function addHumidorItem(payload) {
+  const res = await fetch(`${API_BASE}/humidor/items`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify(payload),
+  });
+  return handle(res);
+}
+
+export async function deleteHumidorItem(id) {
+  const res = await fetch(`${API_BASE}/humidor/items/${id}`, {
+    method: "DELETE",
+    headers: { ...authHeaders() },
+  });
+  return handle(res);
+}
+
+export async function fetchFumate(limit = 30) {
+  const res = await fetch(`${API_BASE}/humidor/fumate?limit=${limit}`, {
+    headers: { ...authHeaders() },
+  });
+  return handle(res);
+}
+
+export async function addFumata(payload) {
+  const res = await fetch(`${API_BASE}/humidor/fumate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify(payload),
+  });
+  return handle(res);
+}
+
+export async function undoFumata(id) {
+  const res = await fetch(`${API_BASE}/humidor/fumate/${id}`, {
+    method: "DELETE",
+    headers: { ...authHeaders() },
+  });
+  return handle(res);
+}
+
+export async function fetchHumidorReview(productId) {
+  const res = await fetch(`${API_BASE}/humidor/reviews/${productId}`, {
+    headers: { ...authHeaders() },
+  });
+  return handle(res);
+}
+
+export async function saveHumidorReview(productId, { stelle, descrizione }) {
+  const res = await fetch(`${API_BASE}/humidor/reviews/${productId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ stelle, descrizione }),
+  });
+  return handle(res);
+}
+
+export async function fetchHumidorStats() {
+  const res = await fetch(`${API_BASE}/humidor/stats`, { headers: { ...authHeaders() } });
+  return handle(res);
+}

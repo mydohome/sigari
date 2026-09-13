@@ -4,6 +4,7 @@ import ResultsTable from "./components/ResultsTable.jsx";
 import AuthBar from "./components/AuthBar.jsx";
 import FavoritesTab from "./components/FavoritesTab.jsx";
 import WishlistTab from "./components/WishlistTab.jsx";
+import HumidorTab from "./components/HumidorTab.jsx";
 import Logo from "./components/Logo.jsx";
 import { searchPrices, fetchCategorie, fetchMarche } from "./api.js";
 import { getStoredUser, clearSession } from "./auth.js";
@@ -90,6 +91,9 @@ export default function App() {
           <button className={tab === "wishlist" ? "active" : ""} onClick={() => setTab("wishlist")}>
             Wishlist
           </button>
+          <button className={tab === "humidor" ? "active" : ""} onClick={() => setTab("humidor")}>
+            Humidor
+          </button>
         </nav>
       </header>
 
@@ -135,6 +139,13 @@ export default function App() {
           <WishlistTab />
         ) : (
           <p className="status-msg">Accedi per vedere e gestire la tua wishlist.</p>
+        ))}
+
+      {tab === "humidor" &&
+        (user ? (
+          <HumidorTab />
+        ) : (
+          <p className="status-msg">Accedi per gestire il tuo humidor.</p>
         ))}
 
       <footer>

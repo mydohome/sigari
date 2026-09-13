@@ -91,6 +91,60 @@ CREATE TABLE IF NOT EXISTS reviews (
   generato_il TIMESTAMP NOT NULL DEFAULT now(),
   modello TEXT
 );
+
+-- --- Humidor personale (inventario, acquisti, fumate, recensioni utente) ---
+
+CREATE TABLE IF NOT EXISTS humidor_shops (
+  id SERIAL PRIMARY KEY,
+  nome TEXT NOT NULL,
+  indirizzo TEXT,
+  lat NUMERIC(9,6),
+  lon NUMERIC(9,6),
+  osm_id TEXT,                      -- id OpenStreetMap del punto scelto, se trovato tramite ricerca esterna
+  created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT now(),
+  UNIQUE (nome, indirizzo)
+);
+
+CREATE INDEX IF NOT EXISTS idx_humidor_shops_nome_lower ON humidor_shops (LOWER(nome));
+
+CREATE TABLE IF NOT EXISTS humidor_items (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  shop_id INTEGER REFERENCES humidor_shops(id) ON DELETE SET NULL,
+  prezzo_acquisto NUMERIC(10,2) NOT NULL,
+  data_acquisto DATE NOT NULL,
+  quantita_iniziale INTEGER NOT NULL DEFAULT 1,
+  quantita_rimanente INTEGER NOT NULL DEFAULT 1,
+  note TEXT,
+  created_at TIMESTAMP NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_humidor_items_user ON humidor_items (user_id);
+CREATE INDEX IF NOT EXISTS idx_humidor_items_product ON humidor_items (product_id);
+
+CREATE TABLE IF NOT EXISTS humidor_fumate (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  humidor_item_id INTEGER NOT NULL REFERENCES humidor_items(id) ON DELETE CASCADE,
+  product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  quantita INTEGER NOT NULL DEFAULT 1,
+  data_fumata DATE NOT NULL DEFAULT CURRENT_DATE,
+  created_at TIMESTAMP NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_humidor_fumate_user_data ON humidor_fumate (user_id, data_fumata DESC);
+
+CREATE TABLE IF NOT EXISTS humidor_reviews (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  stelle SMALLINT CHECK (stelle BETWEEN 1 AND 5),
+  descrizione TEXT,
+  updated_at TIMESTAMP NOT NULL DEFAULT now(),
+  UNIQUE (user_id, product_id)
+);
 `;
 
 async function migrate() {
