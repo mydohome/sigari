@@ -209,35 +209,42 @@ function HaIntegrationCard() {
   const urlStats = `${origin}/api/ha/stats`;
   const urlTemp = `${origin}/api/ha/location-temp`;
 
-  const snippetStats = `sensor:
-  - platform: rest
-    name: Sigari in humidor
-    resource: ${urlStats}
-    method: GET
-    headers:
-      x-api-key: ${stato.api_key}
-    value_template: "{{ value_json.totale_sigari }}"
-    json_attributes:
-      - valore_humidor
-      - per_location
-    scan_interval: 900`;
+  const snippetAbilitaPackage = `homeassistant:
+  packages: !include_dir_named packages`;
 
-  const snippetTemp = `rest_command:
-  invia_temperatura_humidor:
-    url: ${urlTemp}
-    method: POST
-    headers:
-      x-api-key: ${stato.api_key}
-      content-type: application/json
-    payload: '{"location": "Humidor", "temperatura": {{ states("sensor.TUO_SENSORE_TEMPERATURA") }}}'
+  // Un unico package invece di sensor/rest_command/automation separati in
+  // configuration.yaml: tutta l'integrazione sta in un solo file
+  // rimovibile, senza toccare il resto della configurazione HA.
+  const snippetPackage = `sigari_track:
+  sensor:
+    - platform: rest
+      name: Sigari in humidor
+      resource: ${urlStats}
+      method: GET
+      headers:
+        x-api-key: ${stato.api_key}
+      value_template: "{{ value_json.totale_sigari }}"
+      json_attributes:
+        - valore_humidor
+        - per_location
+      scan_interval: 900
 
-automation:
-  - alias: Invia temperatura humidor a Sigari Track
-    trigger:
-      - platform: state
-        entity_id: sensor.TUO_SENSORE_TEMPERATURA
-    action:
-      - service: rest_command.invia_temperatura_humidor`;
+  rest_command:
+    invia_temperatura_humidor:
+      url: ${urlTemp}
+      method: POST
+      headers:
+        x-api-key: ${stato.api_key}
+        content-type: application/json
+      payload: '{"location": "Humidor", "temperatura": {{ states("sensor.TUO_SENSORE_TEMPERATURA") }}}'
+
+  automation:
+    - alias: Invia temperatura humidor a Sigari Track
+      trigger:
+        - platform: state
+          entity_id: sensor.TUO_SENSORE_TEMPERATURA
+      action:
+        - service: rest_command.invia_temperatura_humidor`;
 
   return (
     <div className="ha-integration">
@@ -253,22 +260,29 @@ automation:
       </div>
 
       <p className="status-msg small">
-        <strong>Statistiche verso HA</strong> — sensore REST da incollare nel{" "}
-        <code>configuration.yaml</code> di Home Assistant, con il numero di sigari in humidor:
+        <strong>1. Solo la prima volta</strong> — se in Home Assistant non usi ancora i package,
+        abilitali nel <code>configuration.yaml</code> principale (poi non serve più toccarlo per
+        aggiungerne altri):
       </p>
-      <pre className="ha-snippet">{snippetStats}</pre>
-      <button type="button" className="link-button" onClick={() => copia(snippetStats, "stats")}>
-        {copiato === "stats" ? "Copiato ✓" : "Copia snippet"}
+      <pre className="ha-snippet">{snippetAbilitaPackage}</pre>
+      <button
+        type="button"
+        className="link-button"
+        onClick={() => copia(snippetAbilitaPackage, "abilita")}
+      >
+        {copiato === "abilita" ? "Copiato ✓" : "Copia snippet"}
       </button>
 
       <p className="status-msg small">
-        <strong>Temperatura verso Sigari Track</strong> — automazione HA che invia la temperatura
-        di un sensore alla location "Humidor" ogni volta che cambia (sostituisci{" "}
-        <code>sensor.TUO_SENSORE_TEMPERATURA</code> con l'entità reale):
+        <strong>2. Package Sigari Track</strong> — salva questo contenuto come{" "}
+        <code>&lt;config&gt;/packages/sigari_track.yaml</code>: espone il numero di sigari in
+        humidor su HA e riceve la temperatura da un sensore per la location "Humidor" (sostituisci{" "}
+        <code>sensor.TUO_SENSORE_TEMPERATURA</code> con l'entità reale), tutto in un unico file
+        facile da rimuovere in seguito.
       </p>
-      <pre className="ha-snippet">{snippetTemp}</pre>
-      <button type="button" className="link-button" onClick={() => copia(snippetTemp, "temp")}>
-        {copiato === "temp" ? "Copiato ✓" : "Copia snippet"}
+      <pre className="ha-snippet">{snippetPackage}</pre>
+      <button type="button" className="link-button" onClick={() => copia(snippetPackage, "package")}>
+        {copiato === "package" ? "Copiato ✓" : "Copia snippet"}
       </button>
     </div>
   );
