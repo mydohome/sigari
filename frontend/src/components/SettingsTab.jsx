@@ -208,6 +208,7 @@ function HaIntegrationCard() {
   const origin = window.location.origin;
   const urlStats = `${origin}/api/ha/stats`;
   const urlTemp = `${origin}/api/ha/location-temp`;
+  const urlUmidita = `${origin}/api/ha/location-humidity`;
 
   const snippetAbilitaPackage = `homeassistant:
   packages: !include_dir_named packages`;
@@ -241,6 +242,13 @@ rest_command:
       x-api-key: ${stato.api_key}
       content-type: application/json
     payload: '{"location": "Humidor", "temperatura": {{ states("sensor.TUO_SENSORE_TEMPERATURA") }}}'
+  invia_umidita_humidor:
+    url: ${urlUmidita}
+    method: POST
+    headers:
+      x-api-key: ${stato.api_key}
+      content-type: application/json
+    payload: '{"location": "Humidor", "umidita": {{ states("sensor.TUO_SENSORE_UMIDITA") }}}'
 
 automation:
   - alias: Invia temperatura humidor a Sigari Track
@@ -248,7 +256,13 @@ automation:
       - platform: state
         entity_id: sensor.TUO_SENSORE_TEMPERATURA
     action:
-      - service: rest_command.invia_temperatura_humidor`;
+      - service: rest_command.invia_temperatura_humidor
+  - alias: Invia umidità humidor a Sigari Track
+    trigger:
+      - platform: state
+        entity_id: sensor.TUO_SENSORE_UMIDITA
+    action:
+      - service: rest_command.invia_umidita_humidor`;
 
   return (
     <div className="ha-integration">
@@ -282,9 +296,10 @@ automation:
         aggiungere altre chiavi attorno) in{" "}
         <code>&lt;config&gt;/packages/sigari_track.yaml</code>: è il nome del file stesso a fare da
         nome del pacchetto per Home Assistant. Espone il numero di sigari in humidor su HA e
-        riceve la temperatura da un sensore per la location "Humidor" (sostituisci{" "}
-        <code>sensor.TUO_SENSORE_TEMPERATURA</code> con l'entità reale), tutto in un unico file
-        facile da rimuovere in seguito.
+        riceve da due sensori la temperatura e l'umidità per la location "Humidor" (sostituisci{" "}
+        <code>sensor.TUO_SENSORE_TEMPERATURA</code> e <code>sensor.TUO_SENSORE_UMIDITA</code> con
+        le entità reali — se non hai un sensore di umidità, lascia pure quella parte inutilizzata),
+        tutto in un unico file facile da rimuovere in seguito.
       </p>
       <pre className="ha-snippet">{snippetPackage}</pre>
       <button type="button" className="link-button" onClick={() => copia(snippetPackage, "package")}>

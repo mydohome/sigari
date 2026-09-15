@@ -27,7 +27,7 @@ const MESI = ["Gen", "Feb", "Mar", "Apr", "Mag", "Giu", "Lug", "Ago", "Set", "Ot
 // Un aggiornamento più vecchio di 3 ore probabilmente indica un sensore Home
 // Assistant offline o un'automazione ferma: lo segnaliamo invece di mostrare
 // silenziosamente un dato ormai vecchio.
-const TEMPERATURA_STANTIA_ORE = 3;
+const LETTURA_STANTIA_ORE = 3;
 
 function formatRelativo(dateStr) {
   const diffMin = Math.round((Date.now() - new Date(dateStr).getTime()) / 60000);
@@ -39,22 +39,20 @@ function formatRelativo(dateStr) {
   return `${diffGiorni} ${diffGiorni === 1 ? "giorno" : "giorni"} fa`;
 }
 
-function TemperaturaBadge({ location }) {
-  if (!location || location.temperatura === null || location.temperatura === undefined) return null;
+// Badge generico per una lettura sensore Home Assistant su una location
+// (temperatura, umidità, ...). Non mostra nulla finché non è mai arrivato
+// un dato per quel campo.
+function LetturaBadge({ icona, valore, aggiornataIl, unita, decimali = 1 }) {
+  if (valore === null || valore === undefined) return null;
   const stantia =
-    location.temperatura_aggiornata_il &&
-    Date.now() - new Date(location.temperatura_aggiornata_il).getTime() >
-      TEMPERATURA_STANTIA_ORE * 3600000;
+    aggiornataIl && Date.now() - new Date(aggiornataIl).getTime() > LETTURA_STANTIA_ORE * 3600000;
   return (
     <span
       className={`location-temp ${stantia ? "location-temp-stantia" : ""}`}
-      title={
-        location.temperatura_aggiornata_il
-          ? `Aggiornata ${formatRelativo(location.temperatura_aggiornata_il)}`
-          : undefined
-      }
+      title={aggiornataIl ? `Aggiornata ${formatRelativo(aggiornataIl)}` : undefined}
     >
-      🌡️ {Number(location.temperatura).toFixed(1)}°C
+      {icona} {Number(valore).toFixed(decimali)}
+      {unita}
     </span>
   );
 }
@@ -90,7 +88,19 @@ function LocationGroupSection({
       >
         {!isNonAssegnati && <span className="location-dot" />}
         <span className="location-group-title">{gruppo.location_nome || "Non assegnati"}</span>
-        <TemperaturaBadge location={locationInfo} />
+        <LetturaBadge
+          icona="🌡️"
+          valore={locationInfo?.temperatura}
+          aggiornataIl={locationInfo?.temperatura_aggiornata_il}
+          unita="°C"
+        />
+        <LetturaBadge
+          icona="💧"
+          valore={locationInfo?.umidita}
+          aggiornataIl={locationInfo?.umidita_aggiornata_il}
+          unita="%"
+          decimali={0}
+        />
         <span className="location-group-count">{gruppo.totale}</span>
       </div>
       <ul className="humidor-slim-list humidor-slim-list-modern">

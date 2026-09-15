@@ -115,7 +115,7 @@ router.get("/items", async (req, res) => {
 router.get("/locations", async (_req, res) => {
   try {
     const { rows } = await pool.query(
-      `SELECT id, nome, colore, temperatura, temperatura_aggiornata_il
+      `SELECT id, nome, colore, temperatura, temperatura_aggiornata_il, umidita, umidita_aggiornata_il
        FROM humidor_locations ORDER BY nome ASC`
     );
     res.json({ locations: rows });

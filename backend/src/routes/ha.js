@@ -45,32 +45,47 @@ router.get("/stats", requireApiKey, async (_req, res) => {
   }
 });
 
-// POST /api/ha/location-temp { location, temperatura } - riceve da
-// un'automazione Home Assistant la temperatura rilevata per una location
-// (es. "Humidor"), da chiamare ogni volta che il sensore aggiorna.
-router.post("/location-temp", requireApiKey, async (req, res) => {
-  const { location, temperatura } = req.body || {};
-  if (!location || temperatura === undefined || temperatura === null) {
-    return res.status(400).json({ error: "location e temperatura sono richiesti." });
+// Aggiorna una singola colonna "lettura sensore" (temperatura o umidita') di
+// una location, insieme al relativo timestamp. `colonna` non arriva mai dal
+// body della richiesta (e' passata dai due route handler qui sotto), quindi
+// l'interpolazione nella query non e' un rischio di SQL injection.
+async function aggiornaLettura(res, { location, valore, colonna, etichetta }) {
+  if (!location || valore === undefined || valore === null) {
+    return res.status(400).json({ error: `location e ${etichetta} sono richiesti.` });
   }
-  const temp = Number(temperatura);
-  if (Number.isNaN(temp)) {
-    return res.status(400).json({ error: "temperatura non valida." });
+  const numero = Number(valore);
+  if (Number.isNaN(numero)) {
+    return res.status(400).json({ error: `${etichetta} non valida.` });
   }
   try {
     const result = await pool.query(
-      `UPDATE humidor_locations SET temperatura = $1, temperatura_aggiornata_il = now()
+      `UPDATE humidor_locations SET ${colonna} = $1, ${colonna}_aggiornata_il = now()
        WHERE LOWER(nome) = LOWER($2) RETURNING id, nome`,
-      [temp, location]
+      [numero, location]
     );
     if (!result.rows.length) {
       return res.status(404).json({ error: `Location "${location}" non trovata.` });
     }
-    res.json({ message: "Temperatura aggiornata.", location: result.rows[0].nome });
+    res.json({ message: `${etichetta} aggiornata.`, location: result.rows[0].nome });
   } catch (err) {
-    console.error("Errore aggiornamento temperatura location:", err);
-    res.status(500).json({ error: "Errore nell'aggiornamento della temperatura." });
+    console.error(`Errore aggiornamento ${etichetta} location:`, err);
+    res.status(500).json({ error: `Errore nell'aggiornamento di ${etichetta}.` });
   }
+}
+
+// POST /api/ha/location-temp { location, temperatura } - riceve da
+// un'automazione Home Assistant la temperatura rilevata per una location
+// (es. "Humidor"), da chiamare ogni volta che il sensore aggiorna.
+router.post("/location-temp", requireApiKey, (req, res) => {
+  const { location, temperatura } = req.body || {};
+  return aggiornaLettura(res, { location, valore: temperatura, colonna: "temperatura", etichetta: "temperatura" });
+});
+
+// POST /api/ha/location-humidity { location, umidita } - come sopra, per
+// l'umidita' rilevata da un secondo sensore Home Assistant.
+router.post("/location-humidity", requireApiKey, (req, res) => {
+  const { location, umidita } = req.body || {};
+  return aggiornaLettura(res, { location, valore: umidita, colonna: "umidita", etichetta: "umidità" });
 });
 
 module.exports = router;
