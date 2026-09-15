@@ -9,6 +9,7 @@ import {
   createLocation,
   updateLocation,
   deleteLocation,
+  fetchHaIntegration,
 } from "../api.js";
 import { authHeaders } from "../auth.js";
 
@@ -164,6 +165,115 @@ function LocationManager() {
   );
 }
 
+// Stato e snippet pronti per collegare Home Assistant: un sensore REST che
+// legge le statistiche dell'humidor, e un'automazione che invia la
+// temperatura rilevata da un sensore HA verso una location. L'API key è
+// configurata via HA_API_KEY sul server (come ADMIN_TOKEN): qui viene solo
+// letta e mostrata, non generata né modificata.
+function HaIntegrationCard() {
+  const [stato, setStato] = useState(null);
+  const [errore, setErrore] = useState(null);
+  const [mostraChiave, setMostraChiave] = useState(false);
+  const [copiato, setCopiato] = useState(null);
+
+  useEffect(() => {
+    fetchHaIntegration()
+      .then(setStato)
+      .catch((err) => setErrore(err.message));
+  }, []);
+
+  async function copia(testo, id) {
+    try {
+      await navigator.clipboard.writeText(testo);
+      setCopiato(id);
+      setTimeout(() => setCopiato(null), 1500);
+    } catch {
+      /* clipboard non disponibile (es. contesto non sicuro): l'utente può selezionare a mano */
+    }
+  }
+
+  if (errore) return <p className="error-msg small">{errore}</p>;
+  if (!stato) return <p className="status-msg small">Caricamento...</p>;
+
+  if (!stato.configurata) {
+    return (
+      <p className="status-msg small">
+        Non configurata. Imposta <code>HA_API_KEY</code> nel file <code>.env</code> sul server
+        (genera un valore con <code>openssl rand -hex 32</code>) e rilancia{" "}
+        <code>./update.sh</code>.
+      </p>
+    );
+  }
+
+  const origin = window.location.origin;
+  const urlStats = `${origin}/api/ha/stats`;
+  const urlTemp = `${origin}/api/ha/location-temp`;
+
+  const snippetStats = `sensor:
+  - platform: rest
+    name: Sigari in humidor
+    resource: ${urlStats}
+    method: GET
+    headers:
+      x-api-key: ${stato.api_key}
+    value_template: "{{ value_json.totale_sigari }}"
+    json_attributes:
+      - valore_humidor
+      - per_location
+    scan_interval: 900`;
+
+  const snippetTemp = `rest_command:
+  invia_temperatura_humidor:
+    url: ${urlTemp}
+    method: POST
+    headers:
+      x-api-key: ${stato.api_key}
+      content-type: application/json
+    payload: '{"location": "Humidor", "temperatura": {{ states("sensor.TUO_SENSORE_TEMPERATURA") }}}'
+
+automation:
+  - alias: Invia temperatura humidor a Sigari Track
+    trigger:
+      - platform: state
+        entity_id: sensor.TUO_SENSORE_TEMPERATURA
+    action:
+      - service: rest_command.invia_temperatura_humidor`;
+
+  return (
+    <div className="ha-integration">
+      <div className="ha-integration-key">
+        <span>API key:</span>
+        <code>{mostraChiave ? stato.api_key : "•".repeat(20)}</code>
+        <button type="button" className="link-button" onClick={() => setMostraChiave((v) => !v)}>
+          {mostraChiave ? "Nascondi" : "Mostra"}
+        </button>
+        <button type="button" className="link-button" onClick={() => copia(stato.api_key, "key")}>
+          {copiato === "key" ? "Copiata ✓" : "Copia"}
+        </button>
+      </div>
+
+      <p className="status-msg small">
+        <strong>Statistiche verso HA</strong> — sensore REST da incollare nel{" "}
+        <code>configuration.yaml</code> di Home Assistant, con il numero di sigari in humidor:
+      </p>
+      <pre className="ha-snippet">{snippetStats}</pre>
+      <button type="button" className="link-button" onClick={() => copia(snippetStats, "stats")}>
+        {copiato === "stats" ? "Copiato ✓" : "Copia snippet"}
+      </button>
+
+      <p className="status-msg small">
+        <strong>Temperatura verso Sigari Track</strong> — automazione HA che invia la temperatura
+        di un sensore alla location "Humidor" ogni volta che cambia (sostituisci{" "}
+        <code>sensor.TUO_SENSORE_TEMPERATURA</code> con l'entità reale):
+      </p>
+      <pre className="ha-snippet">{snippetTemp}</pre>
+      <button type="button" className="link-button" onClick={() => copia(snippetTemp, "temp")}>
+        {copiato === "temp" ? "Copiato ✓" : "Copia snippet"}
+      </button>
+    </div>
+  );
+}
+
 export default function SettingsTab() {
   const [backups, setBackups] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -300,6 +410,14 @@ export default function SettingsTab() {
         acquisti. "Humidor" viene proposta di default quando registri un nuovo acquisto.
       </p>
       <LocationManager />
+
+      <h2>Integrazione Home Assistant</h2>
+      <p className="status-msg small">
+        Esponi il numero di sigari in humidor su una dashboard HA, e ricevi da HA la temperatura
+        rilevata da un sensore per la location "Humidor". La connessione è sempre iniziata da HA
+        (mai da questa app), così funziona anche se il server resta in una rete separata.
+      </p>
+      <HaIntegrationCard />
 
       <h2>Backup humidor</h2>
       <p className="status-msg small">

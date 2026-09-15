@@ -195,4 +195,17 @@ router.get("/version", async (_req, res) => {
   });
 });
 
+// GET /api/settings/ha-integration - stato e credenziali per collegare Home
+// Assistant (vedi routes/ha.js). L'API key e' configurata via variabile
+// d'ambiente HA_API_KEY (come ADMIN_TOKEN): questo endpoint la restituisce
+// solo perche' protetto dal login utente, cosi' non serve andare a
+// recuperarla via SSH/docker-compose.yml per configurare HA.
+router.get("/ha-integration", (_req, res) => {
+  const apiKey = process.env.HA_API_KEY || null;
+  res.json({
+    configurata: Boolean(apiKey),
+    api_key: apiKey,
+  });
+});
+
 module.exports = router;

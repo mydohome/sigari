@@ -343,3 +343,8 @@ export async function fetchAppVersion() {
   const res = await fetch(`${API_BASE}/settings/version`, { headers: { ...authHeaders() } });
   return handle(res);
 }
+
+export async function fetchHaIntegration() {
+  const res = await fetch(`${API_BASE}/settings/ha-integration`, { headers: { ...authHeaders() } });
+  return handle(res);
+}

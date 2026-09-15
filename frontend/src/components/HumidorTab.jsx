@@ -24,6 +24,41 @@ function formatData(dateStr) {
 
 const MESI = ["Gen", "Feb", "Mar", "Apr", "Mag", "Giu", "Lug", "Ago", "Set", "Ott", "Nov", "Dic"];
 
+// Un aggiornamento più vecchio di 3 ore probabilmente indica un sensore Home
+// Assistant offline o un'automazione ferma: lo segnaliamo invece di mostrare
+// silenziosamente un dato ormai vecchio.
+const TEMPERATURA_STANTIA_ORE = 3;
+
+function formatRelativo(dateStr) {
+  const diffMin = Math.round((Date.now() - new Date(dateStr).getTime()) / 60000);
+  if (diffMin < 1) return "adesso";
+  if (diffMin < 60) return `${diffMin} min fa`;
+  const diffOre = Math.round(diffMin / 60);
+  if (diffOre < 24) return `${diffOre} ${diffOre === 1 ? "ora" : "ore"} fa`;
+  const diffGiorni = Math.round(diffOre / 24);
+  return `${diffGiorni} ${diffGiorni === 1 ? "giorno" : "giorni"} fa`;
+}
+
+function TemperaturaBadge({ location }) {
+  if (!location || location.temperatura === null || location.temperatura === undefined) return null;
+  const stantia =
+    location.temperatura_aggiornata_il &&
+    Date.now() - new Date(location.temperatura_aggiornata_il).getTime() >
+      TEMPERATURA_STANTIA_ORE * 3600000;
+  return (
+    <span
+      className={`location-temp ${stantia ? "location-temp-stantia" : ""}`}
+      title={
+        location.temperatura_aggiornata_il
+          ? `Aggiornata ${formatRelativo(location.temperatura_aggiornata_il)}`
+          : undefined
+      }
+    >
+      🌡️ {Number(location.temperatura).toFixed(1)}°C
+    </span>
+  );
+}
+
 function LocationBadge({ nome, colore }) {
   if (!nome) return <span className="status-msg small">—</span>;
   return (
@@ -40,6 +75,7 @@ function LocationBadge({ nome, colore }) {
 // per uno.
 function LocationGroupSection({
   gruppo,
+  locationInfo,
   onOpenProdotto,
   selezionabile,
   selezionati,
@@ -54,6 +90,7 @@ function LocationGroupSection({
       >
         {!isNonAssegnati && <span className="location-dot" />}
         <span className="location-group-title">{gruppo.location_nome || "Non assegnati"}</span>
+        <TemperaturaBadge location={locationInfo} />
         <span className="location-group-count">{gruppo.totale}</span>
       </div>
       <ul className="humidor-slim-list humidor-slim-list-modern">
@@ -454,6 +491,7 @@ export default function HumidorTab({ refreshToken }) {
               <React.Fragment key={gruppo.location_id ?? "none"}>
                 <LocationGroupSection
                   gruppo={gruppo}
+                  locationInfo={locations.find((l) => l.id === gruppo.location_id)}
                   onOpenProdotto={setProdottoAperto}
                   selezionabile={isNonAssegnati}
                   selezionati={selezionati}

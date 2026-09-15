@@ -1034,6 +1034,44 @@ button.stat-card-link:hover {
   font-size: 0.85em;
 }
 
+/* --- Integrazione Home Assistant --- */
+
+.ha-integration {
+  background: var(--crema-carta);
+  border: 1px solid #e2d4bd;
+  border-radius: 10px;
+  padding: 0.9rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.ha-integration-key {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.ha-integration-key code {
+  background: #ece1cd;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.85em;
+  letter-spacing: 0.05em;
+}
+
+.ha-snippet {
+  background: var(--tabacco-950);
+  color: #f4ead6;
+  padding: 0.8rem;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  overflow-x: auto;
+  white-space: pre;
+}
+
 /* --- Location humidor (tag colorati: Humidor, Giara, Vetro, ...) --- */
 
 .location-badge {
@@ -1185,6 +1223,23 @@ button.stat-card-link:hover {
   padding: 0.1rem 0.55rem;
   border-radius: 999px;
   font-size: 0.85rem;
+}
+
+.location-temp {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--tabacco-800);
+  background: rgba(255, 255, 255, 0.55);
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  white-space: nowrap;
+  cursor: default;
+}
+
+.location-temp-stantia {
+  color: var(--testo-tenue);
+  background: rgba(0, 0, 0, 0.06);
+  font-weight: 500;
 }
 
 .humidor-slim-list-modern {

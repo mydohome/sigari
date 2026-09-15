@@ -10,6 +10,7 @@ const wishlistRouter = require("./routes/wishlist");
 const reviewsRouter = require("./routes/reviews");
 const humidorRouter = require("./routes/humidor");
 const settingsRouter = require("./routes/settings");
+const haRouter = require("./routes/ha");
 
 const app = express();
 app.use(cors());
@@ -24,6 +25,7 @@ app.use("/api/wishlist", wishlistRouter);
 app.use("/api/reviews", reviewsRouter);
 app.use("/api/humidor", humidorRouter);
 app.use("/api/settings", settingsRouter);
+app.use("/api/ha", haRouter);
 
 const PORT = process.env.PORT || 4000;
 

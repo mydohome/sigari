@@ -32,6 +32,7 @@ services:
       SCRAPE_ON_BOOT: ${SCRAPE_ON_BOOT:-true}
       ADMIN_TOKEN: ${ADMIN_TOKEN:-changeme}
       JWT_SECRET: ${JWT_SECRET:-changeme}
+      HA_API_KEY: ${HA_API_KEY:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       REVIEW_SOURCES: ${REVIEW_SOURCES:-gustotabacco.it,accademiafumolento.forumfree.it,rollingtobacco.it,bottegadelfumatore.com,sigarietabacchi.it}
       REVIEW_MODEL: ${REVIEW_MODEL:-claude-haiku-4-5-20251001}

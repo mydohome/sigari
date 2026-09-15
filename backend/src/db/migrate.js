@@ -121,8 +121,16 @@ CREATE TABLE IF NOT EXISTS humidor_locations (
   id SERIAL PRIMARY KEY,
   nome TEXT NOT NULL UNIQUE,
   colore TEXT NOT NULL DEFAULT '#8b5e34',
+  temperatura NUMERIC(5,2),
+  temperatura_aggiornata_il TIMESTAMP,
   created_at TIMESTAMP NOT NULL DEFAULT now()
 );
+
+-- Aggiunge le colonne anche su database gia' esistenti creati prima di questa
+-- modifica. Valorizzate da un'automazione Home Assistant via
+-- POST /api/ha/location-temp (vedi routes/ha.js).
+ALTER TABLE humidor_locations ADD COLUMN IF NOT EXISTS temperatura NUMERIC(5,2);
+ALTER TABLE humidor_locations ADD COLUMN IF NOT EXISTS temperatura_aggiornata_il TIMESTAMP;
 
 CREATE TABLE IF NOT EXISTS humidor_items (
   id SERIAL PRIMARY KEY,
