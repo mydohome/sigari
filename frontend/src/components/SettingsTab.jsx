@@ -215,36 +215,40 @@ function HaIntegrationCard() {
   // Un unico package invece di sensor/rest_command/automation separati in
   // configuration.yaml: tutta l'integrazione sta in un solo file
   // rimovibile, senza toccare il resto della configurazione HA.
-  const snippetPackage = `sigari_track:
-  sensor:
-    - platform: rest
-      name: Sigari in humidor
-      resource: ${urlStats}
-      method: GET
-      headers:
-        x-api-key: ${stato.api_key}
-      value_template: "{{ value_json.totale_sigari }}"
-      json_attributes:
-        - valore_humidor
-        - per_location
-      scan_interval: 900
+  // NB: nessuna chiave di primo livello tipo "sigari_track:" nel contenuto:
+  // con !include_dir_named è il nome del file stesso a diventare la chiave
+  // del pacchetto. Se il file la contenesse anche lui, l'annidamento
+  // raddoppierebbe e HA proverebbe (fallendo) a caricare "sigari_track"
+  // come se fosse un'integrazione a sé.
+  const snippetPackage = `sensor:
+  - platform: rest
+    name: Sigari in humidor
+    resource: ${urlStats}
+    method: GET
+    headers:
+      x-api-key: ${stato.api_key}
+    value_template: "{{ value_json.totale_sigari }}"
+    json_attributes:
+      - valore_humidor
+      - per_location
+    scan_interval: 900
 
-  rest_command:
-    invia_temperatura_humidor:
-      url: ${urlTemp}
-      method: POST
-      headers:
-        x-api-key: ${stato.api_key}
-        content-type: application/json
-      payload: '{"location": "Humidor", "temperatura": {{ states("sensor.TUO_SENSORE_TEMPERATURA") }}}'
+rest_command:
+  invia_temperatura_humidor:
+    url: ${urlTemp}
+    method: POST
+    headers:
+      x-api-key: ${stato.api_key}
+      content-type: application/json
+    payload: '{"location": "Humidor", "temperatura": {{ states("sensor.TUO_SENSORE_TEMPERATURA") }}}'
 
-  automation:
-    - alias: Invia temperatura humidor a Sigari Track
-      trigger:
-        - platform: state
-          entity_id: sensor.TUO_SENSORE_TEMPERATURA
-      action:
-        - service: rest_command.invia_temperatura_humidor`;
+automation:
+  - alias: Invia temperatura humidor a Sigari Track
+    trigger:
+      - platform: state
+        entity_id: sensor.TUO_SENSORE_TEMPERATURA
+    action:
+      - service: rest_command.invia_temperatura_humidor`;
 
   return (
     <div className="ha-integration">
@@ -274,9 +278,11 @@ function HaIntegrationCard() {
       </button>
 
       <p className="status-msg small">
-        <strong>2. Package Sigari Track</strong> — salva questo contenuto come{" "}
-        <code>&lt;config&gt;/packages/sigari_track.yaml</code>: espone il numero di sigari in
-        humidor su HA e riceve la temperatura da un sensore per la location "Humidor" (sostituisci{" "}
+        <strong>2. Package Sigari Track</strong> — salva questo contenuto esattamente com'è (senza
+        aggiungere altre chiavi attorno) in{" "}
+        <code>&lt;config&gt;/packages/sigari_track.yaml</code>: è il nome del file stesso a fare da
+        nome del pacchetto per Home Assistant. Espone il numero di sigari in humidor su HA e
+        riceve la temperatura da un sensore per la location "Humidor" (sostituisci{" "}
         <code>sensor.TUO_SENSORE_TEMPERATURA</code> con l'entità reale), tutto in un unico file
         facile da rimuovere in seguito.
       </p>
