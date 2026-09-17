@@ -123,6 +123,21 @@ export function IconSettings({ size = 22 }) {
   );
 }
 
+// Libro aperto — per la tab "Guida" (wiki dei concetti base del sigaro)
+export function IconBook({ size = 22 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M12 5.2c-1.5-1.1-3.6-1.5-5.6-1.5-.8 0-1.4.6-1.4 1.4v11.4c0 .8.6 1.4 1.4 1.4 2 0 4.1.4 5.6 1.5m0-14.2c1.5-1.1 3.6-1.5 5.6-1.5.8 0 1.4.6 1.4 1.4v11.4c0 .8-.6 1.4-1.4 1.4-2 0-4.1.4-5.6 1.5m0-14.2v14.2"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 // Carrello acquisti, pulito a due colori — per il pulsante "registra acquisto"
 export function IconCart({ size = 28 }) {
   return (
