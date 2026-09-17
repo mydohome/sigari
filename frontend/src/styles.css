@@ -1372,3 +1372,262 @@ header {
     flex-direction: column;
   }
 }
+
+/* --- Guida / Wiki del sigaro --- */
+
+.wiki h3 {
+  margin: 2rem 0 0.6rem;
+  font-size: 1.15rem;
+  color: var(--tabacco-800);
+}
+
+.wiki h3:first-of-type {
+  margin-top: 1.4rem;
+}
+
+.wiki-diagram {
+  overflow-x: auto;
+  background: var(--crema-carta);
+  border: 1px solid #e2d4bd;
+  border-radius: 12px;
+  padding: 0.8rem;
+  margin: 0.8rem 0;
+}
+
+.wiki-diagram-svg {
+  display: block;
+  margin: 0 auto;
+}
+
+.wiki-cigar-body {
+  fill: var(--tabacco-500);
+  stroke: var(--tabacco-800);
+  stroke-width: 3;
+}
+
+.wiki-cigar-foot {
+  fill: var(--tabacco-900);
+}
+
+.wiki-cigar-cap {
+  fill: var(--tabacco-950);
+}
+
+.wiki-cigar-band {
+  fill: var(--bordeaux);
+}
+
+.wiki-cigar-band-line {
+  fill: var(--oro);
+}
+
+.wiki-marker {
+  fill: var(--tabacco-950);
+  stroke: var(--crema-carta);
+  stroke-width: 2;
+}
+
+.wiki-marker-text {
+  fill: var(--crema-carta);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.wiki-leader {
+  stroke: var(--testo-tenue);
+  stroke-width: 1.4;
+}
+
+.wiki-caption {
+  fill: var(--testo-tenue);
+  font-size: 12px;
+  font-style: italic;
+}
+
+.wiki-section-capa {
+  fill: none;
+  stroke: var(--tabacco-500);
+  stroke-width: 14;
+}
+
+.wiki-section-capote {
+  fill: none;
+  stroke: var(--oro-chiaro);
+  stroke-width: 12;
+}
+
+.wiki-section-tripa {
+  fill: var(--tabacco-950);
+}
+
+.wiki-glossary {
+  margin: 0.8rem 0;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.wiki-glossary-item dt {
+  font-weight: 700;
+  color: var(--tabacco-800);
+  margin-bottom: 0.15rem;
+}
+
+.wiki-glossary-item dd {
+  margin: 0;
+  color: var(--testo);
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+.wiki-glossary-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.3rem;
+  height: 1.3rem;
+  border-radius: 50%;
+  background: var(--tabacco-950);
+  color: var(--crema-carta);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.wiki-simple-list {
+  margin: 0.6rem 0 1rem;
+  padding-left: 1.2rem;
+  line-height: 1.5;
+}
+
+.wiki-simple-list li + li {
+  margin-top: 0.4rem;
+}
+
+.wiki-color-scale {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0.8rem 0;
+}
+
+.wiki-color-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  background: var(--crema-carta);
+  border: 1px solid #e2d4bd;
+  border-radius: 10px;
+  padding: 0.6rem 0.8rem;
+}
+
+.wiki-color-item p {
+  margin: 0.15rem 0 0;
+  font-size: 0.88rem;
+  color: var(--testo-tenue);
+}
+
+.wiki-color-swatch {
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 8px;
+  flex-shrink: 0;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  margin-top: 0.1rem;
+}
+
+.wiki-shapes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.7rem;
+  margin: 0.8rem 0;
+}
+
+.wiki-shape-card {
+  background: var(--crema-carta);
+  border: 1px solid #e2d4bd;
+  border-radius: 10px;
+  padding: 0.8rem;
+  text-align: center;
+}
+
+.wiki-shape-card strong {
+  display: block;
+  margin: 0.4rem 0 0.25rem;
+  color: var(--tabacco-800);
+}
+
+.wiki-shape-card p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--testo-tenue);
+  line-height: 1.4;
+}
+
+.wiki-shape-svg {
+  display: block;
+  margin: 0 auto;
+}
+
+.wiki-formats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin: 0.8rem 0;
+}
+
+.wiki-format-row {
+  display: grid;
+  grid-template-columns: 9rem 1fr auto;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.wiki-format-nome {
+  font-weight: 600;
+  color: var(--tabacco-800);
+  font-size: 0.9rem;
+}
+
+.wiki-format-tag {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: var(--oro-chiaro);
+  color: var(--tabacco-950);
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+.wiki-format-track {
+  background: #ece1cd;
+  border-radius: 999px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  padding: 0 2px;
+}
+
+.wiki-format-bar {
+  background: linear-gradient(90deg, var(--oro-chiaro), var(--oro));
+  border-radius: 999px;
+  min-width: 4px;
+}
+
+.wiki-format-misure {
+  font-size: 0.78rem;
+  color: var(--testo-tenue);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .wiki-format-row {
+    grid-template-columns: 1fr;
+    gap: 0.3rem;
+  }
+
+  .wiki-format-misure {
+    white-space: normal;
+  }
+}

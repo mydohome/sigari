@@ -8,8 +8,9 @@ import HumidorTab from "./components/HumidorTab.jsx";
 import HumidorDashboard from "./components/HumidorDashboard.jsx";
 import GlobalActions from "./components/GlobalActions.jsx";
 import SettingsTab from "./components/SettingsTab.jsx";
+import WikiTab from "./components/WikiTab.jsx";
 import Logo from "./components/Logo.jsx";
-import { IconSearch, IconStar, IconGenieLamp, IconHumidor, IconSettings } from "./components/icons/Icons.jsx";
+import { IconSearch, IconStar, IconGenieLamp, IconHumidor, IconBook, IconSettings } from "./components/icons/Icons.jsx";
 import { searchPrices, fetchCategorie, fetchMarche, fetchProvenienze } from "./api.js";
 import { getStoredUser, clearSession } from "./auth.js";
 
@@ -18,6 +19,7 @@ const TABS = [
   { id: "preferiti", label: "Preferiti", Icon: IconStar },
   { id: "wishlist", label: "Wishlist", Icon: IconGenieLamp },
   { id: "humidor", label: "Humidor", Icon: IconHumidor },
+  { id: "guida", label: "Guida", Icon: IconBook },
   { id: "impostazioni", label: "Impostazioni", Icon: IconSettings },
 ];
 
@@ -165,6 +167,8 @@ export default function App() {
           ) : (
             <p className="status-msg">Accedi per gestire il tuo humidor.</p>
           ))}
+
+        {tab === "guida" && <WikiTab />}
 
         {tab === "impostazioni" &&
           (user ? (
