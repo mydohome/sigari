@@ -1,9 +1,5 @@
 import React from "react";
 
-// Contenuti sintetizzati (non copiati) da più fonti italiane di settore:
-// sigarietabacchi.it, gustotabacco.it, tabaccheriacastelli.it,
-// fincatolacasadelhabano.com. Vedi il richiamo alle fonti in fondo alla pagina.
-
 const PARTI_SIGARO = [
   {
     numero: 1,
@@ -126,7 +122,7 @@ function DiagrammaAnatomia() {
   );
 
   return (
-    <svg width="640" height="270" viewBox="0 0 640 270" className="wiki-diagram-svg" role="img" aria-label="Anatomia del sigaro">
+    <svg width="640" height="290" viewBox="0 0 640 290" className="wiki-diagram-svg" role="img" aria-label="Anatomia del sigaro">
       {/* corpo del sigaro (capa) */}
       <ellipse cx="110" cy="100" rx="14" ry="30" className="wiki-cigar-foot" />
       <rect x="110" y="70" width="410" height="60" rx="2" className="wiki-cigar-body" />
@@ -153,16 +149,16 @@ function DiagrammaAnatomia() {
       {marker(480, 22, 6)}
       {marker(592, 22, 7)}
 
-      {/* sezione trasversale: capa (anello esterno) / sottofascia / tripa */}
-      <circle cx="130" cy="210" r="44" className="wiki-section-capa" />
-      <circle cx="130" cy="210" r="27" className="wiki-section-capote" />
-      <circle cx="130" cy="210" r="12" className="wiki-section-tripa" />
-      <text x="130" y="266" textAnchor="middle" className="wiki-caption">
+      {/* sezione trasversale: capa (anello esterno) / sottofascia / tripa, anelli concentrici a contatto */}
+      <circle cx="130" cy="215" r="33" className="wiki-section-capa" />
+      <circle cx="130" cy="215" r="20" className="wiki-section-capote" />
+      <circle cx="130" cy="215" r="14" className="wiki-section-tripa" />
+      <text x="130" y="270" textAnchor="middle" className="wiki-caption">
         sezione trasversale
       </text>
 
-      {leader(230, 188, 163, 190)}
-      {leader(230, 232, 138, 213)}
+      {leader(232, 193, 147, 205)}
+      {leader(232, 237, 138, 218)}
       {marker(242, 188, 4)}
       {marker(242, 232, 5)}
     </svg>
@@ -297,26 +293,6 @@ export default function WikiTab() {
           </div>
         ))}
       </div>
-
-      <p className="status-msg small wiki-fonti">
-        Contenuti sintetizzati da più fonti italiane di settore:{" "}
-        <a href="https://sigarietabacchi.it/formati-sigari/" target="_blank" rel="noreferrer">
-          sigarietabacchi.it
-        </a>
-        ,{" "}
-        <a href="https://www.gustotabacco.it/termini-e-metodi/113-formati-dei-sigari/" target="_blank" rel="noreferrer">
-          gustotabacco.it
-        </a>
-        ,{" "}
-        <a href="https://www.tabaccheriacastelli.it/sigaro/anatomia-e-classificazione-sigari" target="_blank" rel="noreferrer">
-          tabaccheriacastelli.it
-        </a>{" "}
-        e{" "}
-        <a href="https://www.fincatolacasadelhabano.com/glossario" target="_blank" rel="noreferrer">
-          fincatolacasadelhabano.com
-        </a>
-        .
-      </p>
     </div>
   );
 }

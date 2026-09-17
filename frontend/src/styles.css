@@ -1447,13 +1447,13 @@ header {
 .wiki-section-capa {
   fill: none;
   stroke: var(--tabacco-500);
-  stroke-width: 16;
+  stroke-width: 14;
 }
 
 .wiki-section-capote {
   fill: none;
   stroke: var(--oro-chiaro);
-  stroke-width: 14;
+  stroke-width: 12;
 }
 
 .wiki-section-tripa {
@@ -1619,10 +1619,6 @@ header {
   color: var(--testo-tenue);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
-}
-
-.wiki-fonti {
-  margin-top: 2rem;
 }
 
 @media (max-width: 640px) {
