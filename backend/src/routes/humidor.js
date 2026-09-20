@@ -317,6 +317,7 @@ router.get("/fumate", async (req, res) => {
   try {
     const { rows } = await pool.query(
       `SELECT f.id, f.quantita, f.data_fumata, f.created_at,
+              f.ora_inizio, f.ora_fine, f.riaccensioni,
               p.id AS product_id, p.marca, p.categoria, p.formato
        FROM humidor_fumate f
        JOIN products p ON p.id = f.product_id
@@ -332,9 +333,41 @@ router.get("/fumate", async (req, res) => {
   }
 });
 
-// POST /api/humidor/fumate { humidor_item_id, quantita?, data_fumata? }
+// GET /api/humidor/fumate/stats/:productId - durata media fumata per uno specifico sigaro
+router.get("/fumate/stats/:productId", async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT
+         COUNT(*) AS fumate_totali,
+         COUNT(*) FILTER (WHERE ora_inizio IS NOT NULL AND ora_fine IS NOT NULL AND ora_fine >= ora_inizio) AS fumate_con_durata,
+         AVG(EXTRACT(EPOCH FROM (ora_fine - ora_inizio)) / 60.0)
+           FILTER (WHERE ora_inizio IS NOT NULL AND ora_fine IS NOT NULL AND ora_fine >= ora_inizio) AS durata_media_minuti,
+         AVG(riaccensioni) FILTER (WHERE riaccensioni IS NOT NULL) AS riaccensioni_medie
+       FROM humidor_fumate
+       WHERE user_id = $1 AND product_id = $2`,
+      [req.userId, req.params.productId]
+    );
+    const r = rows[0];
+    const MIN_CAMPIONI_DURATA = 5;
+    const fumateConDurata = Number(r.fumate_con_durata);
+    res.json({
+      fumate_totali: Number(r.fumate_totali),
+      fumate_con_durata: fumateConDurata,
+      durata_media_minuti:
+        fumateConDurata >= MIN_CAMPIONI_DURATA && r.durata_media_minuti
+          ? Number(Number(r.durata_media_minuti).toFixed(1))
+          : null,
+      riaccensioni_medie: r.riaccensioni_medie ? Number(Number(r.riaccensioni_medie).toFixed(1)) : null,
+    });
+  } catch (err) {
+    console.error("Errore statistiche fumata prodotto:", err);
+    res.status(500).json({ error: "Errore nel calcolo delle statistiche del sigaro." });
+  }
+});
+
+// POST /api/humidor/fumate { humidor_item_id, quantita?, data_fumata?, ora_inizio?, ora_fine?, riaccensioni? }
 router.post("/fumate", async (req, res) => {
-  const { humidor_item_id, quantita = 1, data_fumata } = req.body || {};
+  const { humidor_item_id, quantita = 1, data_fumata, ora_inizio, ora_fine, riaccensioni } = req.body || {};
   if (!humidor_item_id) return res.status(400).json({ error: "humidor_item_id richiesto." });
 
   const client = await pool.connect();
@@ -360,9 +393,18 @@ router.post("/fumate", async (req, res) => {
       [quantita, humidor_item_id]
     );
     const inserted = await client.query(
-      `INSERT INTO humidor_fumate (user_id, humidor_item_id, product_id, quantita, data_fumata)
-       VALUES ($1, $2, $3, $4, COALESCE($5, CURRENT_DATE)) RETURNING id`,
-      [req.userId, humidor_item_id, item.product_id, quantita, data_fumata || null]
+      `INSERT INTO humidor_fumate (user_id, humidor_item_id, product_id, quantita, data_fumata, ora_inizio, ora_fine, riaccensioni)
+       VALUES ($1, $2, $3, $4, COALESCE($5, CURRENT_DATE), $6, $7, $8) RETURNING id`,
+      [
+        req.userId,
+        humidor_item_id,
+        item.product_id,
+        quantita,
+        data_fumata || null,
+        ora_inizio || null,
+        ora_fine || null,
+        riaccensioni === "" || riaccensioni === undefined ? null : riaccensioni,
+      ]
     );
     await client.query("COMMIT");
     res.status(201).json({ id: inserted.rows[0].id });
@@ -372,6 +414,37 @@ router.post("/fumate", async (req, res) => {
     res.status(500).json({ error: "Errore nella registrazione della fumata." });
   } finally {
     client.release();
+  }
+});
+
+// PATCH /api/humidor/fumate/:id { quantita?, data_fumata?, ora_inizio?, ora_fine?, riaccensioni? }
+router.patch("/fumate/:id", async (req, res) => {
+  const { quantita, data_fumata, ora_inizio, ora_fine, riaccensioni } = req.body || {};
+  try {
+    const { rows } = await pool.query(
+      `UPDATE humidor_fumate SET
+         quantita = COALESCE($1, quantita),
+         data_fumata = COALESCE($2, data_fumata),
+         ora_inizio = $3,
+         ora_fine = $4,
+         riaccensioni = $5
+       WHERE id = $6 AND user_id = $7
+       RETURNING id`,
+      [
+        quantita || null,
+        data_fumata || null,
+        ora_inizio || null,
+        ora_fine || null,
+        riaccensioni === "" || riaccensioni === undefined ? null : riaccensioni,
+        req.params.id,
+        req.userId,
+      ]
+    );
+    if (!rows.length) return res.status(404).json({ error: "Fumata non trovata." });
+    res.json({ message: "Fumata aggiornata." });
+  } catch (err) {
+    console.error("Errore modifica fumata:", err);
+    res.status(500).json({ error: "Errore nella modifica della fumata." });
   }
 });
 
@@ -484,6 +557,14 @@ router.get("/stats", async (req, res) => {
       "SELECT COALESCE(SUM(quantita), 0) AS totale FROM humidor_fumate WHERE user_id = $1",
       [req.userId]
     );
+    const durata = await pool.query(
+      `SELECT
+         COUNT(*) FILTER (WHERE ora_inizio IS NOT NULL AND ora_fine IS NOT NULL AND ora_fine >= ora_inizio) AS fumate_con_durata,
+         AVG(EXTRACT(EPOCH FROM (ora_fine - ora_inizio)) / 60.0)
+           FILTER (WHERE ora_inizio IS NOT NULL AND ora_fine IS NOT NULL AND ora_fine >= ora_inizio) AS durata_media_minuti
+       FROM humidor_fumate WHERE user_id = $1`,
+      [req.userId]
+    );
 
     const totaleFumate = Number(fumateTotali.rows[0].totale);
     const primaData = primaFumata.rows[0].prima;
@@ -499,6 +580,15 @@ router.get("/stats", async (req, res) => {
       : 0;
     const mediaAnnuale = totaleFumate / anniTrascorsi;
 
+    // La media diventa significativa solo con un minimo di campioni: sotto
+    // soglia la nascondiamo invece di mostrare un numero fuorviante.
+    const MIN_CAMPIONI_DURATA = 5;
+    const fumateConDurata = Number(durata.rows[0].fumate_con_durata);
+    const durataMediaMinuti =
+      fumateConDurata >= MIN_CAMPIONI_DURATA && durata.rows[0].durata_media_minuti
+        ? Number(Number(durata.rows[0].durata_media_minuti).toFixed(1))
+        : null;
+
     res.json({
       totale_in_humidor: Number(totali.rows[0].totale_in_humidor),
       valore_in_humidor: Number(totali.rows[0].valore_in_humidor),
@@ -507,6 +597,8 @@ router.get("/stats", async (req, res) => {
       media_settimanale: Number(mediaSettimanale.toFixed(2)),
       media_mensile: Number(mediaMensile.toFixed(2)),
       media_annuale: Number(mediaAnnuale.toFixed(2)),
+      durata_media_minuti: durataMediaMinuti,
+      fumate_con_durata: fumateConDurata,
       serie_settimanale: serieSettimanale.map((r) => ({ periodo: r.periodo, totale: Number(r.totale) })),
       serie_mensile: serieMensile.map((r) => ({ periodo: r.periodo, totale: Number(r.totale) })),
       top_marche: marche.rows.map((r) => ({ marca: r.marca, totale: Number(r.totale) })),

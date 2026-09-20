@@ -7,10 +7,21 @@ import {
   fetchHumidorStats,
   fetchLocations,
   bulkAssignLocation,
+  fetchProductFumataStats,
 } from "../api.js";
 import BarChart from "./BarChart.jsx";
 import HumidorReviewEditor from "./HumidorReviewEditor.jsx";
 import PurchaseModal from "./PurchaseModal.jsx";
+import FumataModal from "./FumataModal.jsx";
+
+function formatDurata(minuti) {
+  if (minuti === null || minuti === undefined) return "—";
+  const m = Math.round(minuti);
+  if (m < 60) return `${m} min`;
+  const ore = Math.floor(m / 60);
+  const resto = m % 60;
+  return resto ? `${ore}h ${resto}min` : `${ore}h`;
+}
 
 function formatEuro(value) {
   if (value === null || value === undefined) return "—";
@@ -133,6 +144,11 @@ function LocationGroupSection({
 
 function ProductDetailPage({ prodotto, onBack, onChanged }) {
   const [itemInModifica, setItemInModifica] = useState(null);
+  const [statsFumata, setStatsFumata] = useState(null);
+
+  useEffect(() => {
+    fetchProductFumataStats(prodotto.product_id).then(setStatsFumata);
+  }, [prodotto.product_id]);
 
   return (
     <div className="product-detail-page">
@@ -143,6 +159,16 @@ function ProductDetailPage({ prodotto, onBack, onChanged }) {
         {prodotto.marca}
         {prodotto.formato ? ` — ${prodotto.formato}` : ""}
       </h2>
+
+      {statsFumata && statsFumata.durata_media_minuti !== null && (
+        <p className="status-msg small">
+          Durata media fumata: <strong>{formatDurata(statsFumata.durata_media_minuti)}</strong>
+          {" "}(su {statsFumata.fumate_con_durata} fumate cronometrate)
+          {statsFumata.riaccensioni_medie !== null && (
+            <> · riaccensioni medie: {statsFumata.riaccensioni_medie}</>
+          )}
+        </p>
+      )}
 
       <HumidorReviewEditor productId={prodotto.product_id} />
 
@@ -286,6 +312,7 @@ export default function HumidorTab({ refreshToken }) {
   const [selezionati, setSelezionati] = useState(new Map()); // key -> { lottiIds: [...] }
   const [locationScelta, setLocationScelta] = useState("");
   const [assegnando, setAssegnando] = useState(false);
+  const [fumataInModifica, setFumataInModifica] = useState(null);
 
   async function loadAll() {
     setLoading(true);
@@ -459,6 +486,12 @@ export default function HumidorTab({ refreshToken }) {
             <span className="stat-value">{stats.media_annuale}</span>
             <span className="stat-label">Media / anno</span>
           </div>
+          {stats.durata_media_minuti !== null && (
+            <div className="stat-card">
+              <span className="stat-value">{formatDurata(stats.durata_media_minuti)}</span>
+              <span className="stat-label">Durata media fumata</span>
+            </div>
+          )}
         </div>
       )}
 
@@ -542,19 +575,40 @@ export default function HumidorTab({ refreshToken }) {
         <>
           <h2>Ultime fumate</h2>
           <ul className="fumate-log">
-            {fumate.map((f) => (
-              <li key={f.id}>
-                <span>
-                  {formatData(f.data_fumata)} — {f.marca} {f.formato ? `(${f.formato})` : ""}
-                  {f.quantita > 1 ? ` ×${f.quantita}` : ""}
-                </span>
-                <button className="link-button" onClick={() => handleUndoFumata(f.id)}>
-                  annulla
-                </button>
-              </li>
-            ))}
+            {fumate.map((f) => {
+              const durataMin =
+                f.ora_inizio && f.ora_fine && f.ora_fine >= f.ora_inizio
+                  ? (new Date(`1970-01-01T${f.ora_fine}`) - new Date(`1970-01-01T${f.ora_inizio}`)) / 60000
+                  : null;
+              return (
+                <li key={f.id}>
+                  <span>
+                    {formatData(f.data_fumata)} — {f.marca} {f.formato ? `(${f.formato})` : ""}
+                    {f.quantita > 1 ? ` ×${f.quantita}` : ""}
+                    {durataMin !== null && ` · ${formatDurata(durataMin)}`}
+                    {f.riaccensioni ? ` · ${f.riaccensioni} riaccensioni` : ""}
+                  </span>
+                  <span className="fumate-log-actions">
+                    <button className="link-button" onClick={() => setFumataInModifica(f)}>
+                      modifica
+                    </button>
+                    <button className="link-button" onClick={() => handleUndoFumata(f.id)}>
+                      annulla
+                    </button>
+                  </span>
+                </li>
+              );
+            })}
           </ul>
         </>
+      )}
+
+      {fumataInModifica && (
+        <FumataModal
+          fumata={fumataInModifica}
+          onClose={() => setFumataInModifica(null)}
+          onSaved={loadAll}
+        />
       )}
     </div>
   );
