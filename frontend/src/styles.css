@@ -829,6 +829,12 @@ button.stat-card-link:hover {
   border-bottom: none;
 }
 
+.fumate-log-actions {
+  display: flex;
+  gap: 0.7rem;
+  flex-shrink: 0;
+}
+
 .star-rating {
   display: inline-flex;
   gap: 0.1rem;

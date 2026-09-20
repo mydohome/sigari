@@ -169,6 +169,11 @@ CREATE TABLE IF NOT EXISTS humidor_fumate (
 
 CREATE INDEX IF NOT EXISTS idx_humidor_fumate_user_data ON humidor_fumate (user_id, data_fumata DESC);
 
+-- Orario inizio/fine e numero di riaccensioni, facoltativi, per calcolare la durata di una fumata
+ALTER TABLE humidor_fumate ADD COLUMN IF NOT EXISTS ora_inizio TIME;
+ALTER TABLE humidor_fumate ADD COLUMN IF NOT EXISTS ora_fine TIME;
+ALTER TABLE humidor_fumate ADD COLUMN IF NOT EXISTS riaccensioni INTEGER;
+
 CREATE TABLE IF NOT EXISTS humidor_reviews (
   id SERIAL PRIMARY KEY,
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,

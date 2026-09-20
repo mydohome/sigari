@@ -233,9 +233,25 @@ export async function addFumata(payload) {
   return handle(res);
 }
 
+export async function updateFumata(id, payload) {
+  const res = await fetch(`${API_BASE}/humidor/fumate/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify(payload),
+  });
+  return handle(res);
+}
+
 export async function undoFumata(id) {
   const res = await fetch(`${API_BASE}/humidor/fumate/${id}`, {
     method: "DELETE",
+    headers: { ...authHeaders() },
+  });
+  return handle(res);
+}
+
+export async function fetchProductFumataStats(productId) {
+  const res = await fetch(`${API_BASE}/humidor/fumate/stats/${productId}`, {
     headers: { ...authHeaders() },
   });
   return handle(res);
