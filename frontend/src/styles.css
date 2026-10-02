@@ -749,22 +749,36 @@ button.stat-card-link:hover {
   100% { transform: translate(var(--dx, 6px), var(--rise, -20px)) scale(1.9); opacity: 0; }
 }
 
+/* Grafici settimana/mese affiancati (uno sotto l'altro quando manca lo spazio) */
+
+.dashboard-charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: 1rem;
+  margin: 1.2rem 0;
+}
+
+.dashboard-charts .burn-panel {
+  margin: 0;
+  min-width: 0;
+}
+
 /* Barre settimanali/mensili: sigari in piedi */
 
 .cigar-chart-bars {
   display: flex;
   justify-content: center;
   align-items: flex-end;
-  gap: 6px;
-  height: 178px;
-  padding-top: 32px;
+  gap: 4px;
+  height: 130px;
+  padding-top: 28px;
   border-bottom: 1px solid rgba(233, 196, 106, 0.25);
 }
 
 .cigar-col {
   flex: 1 1 0;
   min-width: 0;
-  max-width: 64px;
+  max-width: 40px;
   display: flex;
   justify-content: center;
   align-items: flex-end;
@@ -778,7 +792,7 @@ button.stat-card-link:hover {
 .cigar-bar {
   position: relative;
   width: 100%;
-  max-width: 26px;
+  max-width: 18px;
   height: var(--h);
   border-radius: 2px 2px 6px 6px;
   background: linear-gradient(90deg, #2b1810 0%, #8a5a2b 35%, #6b4423 62%, #2b1810 100%);
@@ -788,7 +802,7 @@ button.stat-card-link:hover {
 }
 
 .cigar-bar-vuoto {
-  max-width: 26px;
+  max-width: 18px;
   height: 4px;
   border-radius: 2px;
   background: rgba(246, 237, 224, 0.2);
@@ -805,7 +819,7 @@ button.stat-card-link:hover {
   left: -1px;
   right: -1px;
   top: 0;
-  height: 9px;
+  height: 7px;
   background: linear-gradient(90deg, #8f8981 0%, #e4e0da 40%, #c9c4bc 70%, #8f8981 100%);
   clip-path: polygon(0 28%, 14% 4%, 30% 36%, 50% 0, 70% 34%, 86% 6%, 100% 28%, 100% 100%, 0 100%);
 }
@@ -814,11 +828,11 @@ button.stat-card-link:hover {
   position: absolute;
   left: 8%;
   right: 8%;
-  top: 7px;
-  height: 6px;
+  top: 5px;
+  height: 5px;
   border-radius: 50%;
   background: radial-gradient(ellipse, #fff3c4 0%, #ffb347 35%, var(--brace) 70%, transparent 100%);
-  box-shadow: 0 0 8px 2px rgba(226, 102, 45, 0.7), 0 0 18px 5px rgba(226, 102, 45, 0.3);
+  box-shadow: 0 0 6px 2px rgba(226, 102, 45, 0.7), 0 0 14px 4px rgba(226, 102, 45, 0.3);
   animation: ember-flicker 1.2s ease-in-out infinite alternate;
   animation-delay: calc(var(--i) * -170ms);
 }
@@ -828,7 +842,7 @@ button.stat-card-link:hover {
   left: 0;
   right: 0;
   top: 34%;
-  height: 6px;
+  height: 5px;
   background: linear-gradient(90deg, var(--bordeaux), var(--oro-chiaro) 45%, var(--bordeaux));
   border-top: 1px solid rgba(0, 0, 0, 0.3);
   border-bottom: 1px solid rgba(0, 0, 0, 0.3);
@@ -838,14 +852,14 @@ button.stat-card-link:hover {
   position: absolute;
   left: 50%;
   bottom: 100%;
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   margin-left: -3px;
   border-radius: 50%;
   background: rgba(230, 224, 214, 0.55);
   filter: blur(2px);
   opacity: 0;
-  --rise: -26px;
+  --rise: -20px;
   animation: smoke-rise 3s ease-out infinite;
   animation-delay: calc(var(--i) * 230ms + 0.9s);
 }
@@ -858,14 +872,14 @@ button.stat-card-link:hover {
 .cigar-chart-labels {
   display: flex;
   justify-content: center;
-  gap: 6px;
+  gap: 4px;
   margin-top: 0.4rem;
 }
 
 .cigar-chart-labels span {
   flex: 1 1 0;
   min-width: 0;
-  max-width: 64px;
+  max-width: 40px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -875,13 +889,13 @@ button.stat-card-link:hover {
 }
 
 .cigar-chart-labels strong {
-  font-size: var(--fs-lg);
+  font-size: var(--fs-body);
   color: var(--oro-chiaro);
 }
 
 .cigar-chart-labels em {
   font-style: normal;
-  font-size: var(--fs-small);
+  font-size: var(--fs-tiny);
   color: var(--crema);
 }
 
@@ -1798,11 +1812,6 @@ header {
 
   .burn-panel {
     padding: 1rem 0.9rem 1.1rem;
-  }
-
-  .cigar-chart-bars,
-  .cigar-chart-labels {
-    gap: 4px;
   }
 
   .humidor-actions button {

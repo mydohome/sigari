@@ -92,39 +92,41 @@ export default function DashboardFumateTab({ refreshToken }) {
         </div>
       </div>
 
-      {stats.serie_settimanale.length > 0 && (
-        <section className="burn-panel burn-chart-panel">
-          <h3>Fumate per settimana</h3>
-          <p className="burn-subtitle">Un sigaro per ogni settimana, indicata dal lunedì</p>
-          <BarChart
-            data={riempiSerie(stats.serie_settimanale, "settimana")}
-            formatLabel={(d) => String(new Date(d).getDate())}
-            formatSub={(d, i, data) => {
-              const mese = new Date(d).getMonth();
-              const precedente = i > 0 ? new Date(data[i - 1].label).getMonth() : null;
-              return mese !== precedente ? MESI[mese] : "";
-            }}
-            unitLabel={(d) => `settimana del ${formatData(d)}`}
-          />
-        </section>
-      )}
+      <div className="dashboard-charts">
+        {stats.serie_settimanale.length > 0 && (
+          <section className="burn-panel burn-chart-panel">
+            <h3>Fumate per settimana</h3>
+            <p className="burn-subtitle">Ogni sigaro è una settimana · il numero è il lunedì d'inizio</p>
+            <BarChart
+              data={riempiSerie(stats.serie_settimanale, "settimana")}
+              formatLabel={(d) => String(new Date(d).getDate())}
+              formatSub={(d, i, data) => {
+                const mese = new Date(d).getMonth();
+                const precedente = i > 0 ? new Date(data[i - 1].label).getMonth() : null;
+                return mese !== precedente ? MESI[mese] : "";
+              }}
+              unitLabel={(d) => `settimana del ${formatData(d)}`}
+            />
+          </section>
+        )}
 
-      {stats.serie_mensile.length > 0 && (
-        <section className="burn-panel burn-chart-panel">
-          <h3>Fumate per mese</h3>
-          <p className="burn-subtitle">Un sigaro per ogni mese</p>
-          <BarChart
-            data={riempiSerie(stats.serie_mensile, "mese")}
-            formatLabel={(d) => MESI[new Date(d).getMonth()]}
-            formatSub={(d, i, data) => {
-              const anno = new Date(d).getFullYear();
-              const precedente = i > 0 ? new Date(data[i - 1].label).getFullYear() : null;
-              return anno !== precedente ? String(anno) : "";
-            }}
-            unitLabel={(d) => `${MESI[new Date(d).getMonth()]} ${new Date(d).getFullYear()}`}
-          />
-        </section>
-      )}
+        {stats.serie_mensile.length > 0 && (
+          <section className="burn-panel burn-chart-panel">
+            <h3>Fumate per mese</h3>
+            <p className="burn-subtitle">Ogni sigaro è un mese</p>
+            <BarChart
+              data={riempiSerie(stats.serie_mensile, "mese")}
+              formatLabel={(d) => MESI[new Date(d).getMonth()]}
+              formatSub={(d, i, data) => {
+                const anno = new Date(d).getFullYear();
+                const precedente = i > 0 ? new Date(data[i - 1].label).getFullYear() : null;
+                return anno !== precedente ? String(anno) : "";
+              }}
+              unitLabel={(d) => `${MESI[new Date(d).getMonth()]} ${new Date(d).getFullYear()}`}
+            />
+          </section>
+        )}
+      </div>
 
       <DurataFumate fumate={fumate} stats={stats} />
       {stats.fumate_con_durata === 0 && (

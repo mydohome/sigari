@@ -1,8 +1,8 @@
 import React from "react";
 
-const ALTEZZA_MAX = 136; // px del sigaro piu' alto
-const ALTEZZA_MIN = 22; // abbastanza per cenere + brace
-const ALTEZZA_MIN_FASCIA = 70; // sotto questa altezza la fascia dorata non entra
+const ALTEZZA_MAX = 96; // px del sigaro piu' alto
+const ALTEZZA_MIN = 18; // abbastanza per cenere + brace
+const ALTEZZA_MIN_FASCIA = 56; // sotto questa altezza la fascia dorata non entra
 
 // Grafico a barre in cui ogni barra e' un sigaro in piedi: cenere in cima,
 // brace che sfarfalla e un filo di fumo. Solo HTML/CSS, nessuna dipendenza.
