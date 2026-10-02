@@ -13,15 +13,8 @@ import BarChart from "./BarChart.jsx";
 import HumidorReviewEditor from "./HumidorReviewEditor.jsx";
 import PurchaseModal from "./PurchaseModal.jsx";
 import FumataModal from "./FumataModal.jsx";
-
-function formatDurata(minuti) {
-  if (minuti === null || minuti === undefined) return "—";
-  const m = Math.round(minuti);
-  if (m < 60) return `${m} min`;
-  const ore = Math.floor(m / 60);
-  const resto = m % 60;
-  return resto ? `${ore}h ${resto}min` : `${ore}h`;
-}
+import DurataFumate, { BurnCigar, scalaMinuti } from "./DurataFumate.jsx";
+import { durataMinuti, formatDurata } from "../durata.js";
 
 function formatEuro(value) {
   if (value === null || value === undefined) return "—";
@@ -161,13 +154,23 @@ function ProductDetailPage({ prodotto, onBack, onChanged }) {
       </h2>
 
       {statsFumata && statsFumata.durata_media_minuti !== null && (
-        <p className="status-msg small">
-          Durata media fumata: <strong>{formatDurata(statsFumata.durata_media_minuti)}</strong>
-          {" "}(su {statsFumata.fumate_con_durata} fumate cronometrate)
-          {statsFumata.riaccensioni_medie !== null && (
-            <> · riaccensioni medie: {statsFumata.riaccensioni_medie}</>
-          )}
-        </p>
+        <div className="burn-panel burn-panel-compact">
+          <div className="burn-hero-main">
+            <span className="burn-hero-value">{formatDurata(statsFumata.durata_media_minuti)}</span>
+            <span className="burn-hero-label">
+              durata media · {statsFumata.fumate_con_durata} fumate cronometrate
+              {statsFumata.riaccensioni_medie !== null && ` · ${statsFumata.riaccensioni_medie} riaccensioni in media`}
+            </span>
+          </div>
+          <div className="burn-rows">
+            <div className="burn-row">
+              <BurnCigar
+                minuti={statsFumata.durata_media_minuti}
+                scala={scalaMinuti(statsFumata.durata_media_minuti)}
+              />
+            </div>
+          </div>
+        </div>
       )}
 
       <HumidorReviewEditor productId={prodotto.product_id} />
@@ -486,17 +489,11 @@ export default function HumidorTab({ refreshToken }) {
             <span className="stat-value">{stats.media_annuale}</span>
             <span className="stat-label">Media / anno</span>
           </div>
-          {stats.durata_media_minuti !== null && (
-            <div className="stat-card">
-              <span className="stat-value">{formatDurata(stats.durata_media_minuti)}</span>
-              <span className="stat-label">Durata media fumata</span>
-            </div>
-          )}
         </div>
       )}
 
       {stats && (stats.serie_settimanale.length > 0 || stats.serie_mensile.length > 0) && (
-        <div className="humidor-charts">
+        <div className="humidor-charts burn-panel">
           <div>
             <h3>Fumate per settimana</h3>
             <BarChart
@@ -513,6 +510,8 @@ export default function HumidorTab({ refreshToken }) {
           </div>
         </div>
       )}
+
+      {stats && <DurataFumate fumate={fumate} stats={stats} />}
 
       <div className="humidor-section-header">
         <h2>Il mio humidor</h2>
@@ -576,10 +575,7 @@ export default function HumidorTab({ refreshToken }) {
           <h2>Ultime fumate</h2>
           <ul className="fumate-log">
             {fumate.map((f) => {
-              const durataMin =
-                f.ora_inizio && f.ora_fine && f.ora_fine >= f.ora_inizio
-                  ? (new Date(`1970-01-01T${f.ora_fine}`) - new Date(`1970-01-01T${f.ora_inizio}`)) / 60000
-                  : null;
+              const durataMin = durataMinuti(f);
               return (
                 <li key={f.id}>
                   <span>

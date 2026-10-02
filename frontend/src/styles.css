@@ -656,50 +656,406 @@ button.stat-card-link:hover {
   margin-top: 0.2rem;
 }
 
+/* --- Pannello "lounge": grafici fumate con cenere, brace e fumo --- */
+
+.burn-panel {
+  position: relative;
+  margin: 1.2rem 0;
+  padding: 1.1rem 1.2rem 1.2rem;
+  color: var(--crema);
+  background:
+    radial-gradient(120% 90% at 15% 0%, rgba(201, 153, 46, 0.12) 0%, transparent 55%),
+    linear-gradient(160deg, var(--tabacco-800) 0%, var(--tabacco-900) 55%, var(--tabacco-950) 100%);
+  border: 1px solid var(--tabacco-700);
+  border-radius: 14px;
+  box-shadow: 0 6px 18px var(--ombra);
+}
+
 .humidor-charts {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.2rem;
-  margin: 1.2rem 0;
-  background: var(--crema-carta);
-  border: 1px solid #e2d4bd;
-  border-radius: 10px;
-  padding: 1rem;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1.4rem;
 }
 
-.humidor-charts h3 {
-  margin: 0 0 0.5rem;
-  font-size: 0.95rem;
-  color: var(--tabacco-800);
+.humidor-charts h3,
+.burn-title {
+  margin: 0 0 0.6rem;
+  font-size: 0.8rem;
   font-family: "Inter", sans-serif;
   font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--oro-chiaro);
 }
 
-.bar-chart-svg {
-  width: 100%;
-  height: 120px;
+@keyframes ember-flicker {
+  0% { opacity: 0.8; transform: scale(0.92); }
+  30% { opacity: 1; transform: scale(1.08); }
+  55% { opacity: 0.85; transform: scale(0.97); }
+  100% { opacity: 1; transform: scale(1.05); }
 }
 
-.bar-rect {
-  fill: var(--oro);
+@keyframes smoke-rise {
+  0% { transform: translate(0, 0) scale(0.6); opacity: 0; }
+  20% { opacity: 0.4; }
+  100% { transform: translate(var(--dx, 6px), var(--rise, -20px)) scale(1.9); opacity: 0; }
 }
 
-.bar-value {
-  font-size: 5px;
-  fill: var(--testo-tenue);
-}
+/* Barre settimanali/mensili: sigari in piedi */
 
-.bar-chart-labels {
+.cigar-chart-bars {
   display: flex;
-  margin-top: 0.3rem;
+  align-items: flex-end;
+  gap: 6px;
+  height: 178px;
+  padding-top: 32px;
+  border-bottom: 1px solid rgba(233, 196, 106, 0.25);
 }
 
-.bar-chart-labels span {
+.cigar-col {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  height: 100%;
+}
+
+@keyframes cigar-grow {
+  from { height: 0; }
+}
+
+.cigar-bar {
+  position: relative;
+  width: 100%;
+  max-width: 26px;
+  height: var(--h);
+  border-radius: 2px 2px 6px 6px;
+  background: linear-gradient(90deg, #2b1810 0%, #8a5a2b 35%, #6b4423 62%, #2b1810 100%);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.45);
+  animation: cigar-grow 0.9s cubic-bezier(0.22, 0.8, 0.3, 1) both;
+  animation-delay: calc(var(--i) * 70ms);
+}
+
+.cigar-ash {
+  position: absolute;
+  left: -1px;
+  right: -1px;
+  top: 0;
+  height: 9px;
+  background: linear-gradient(90deg, #8f8981 0%, #e4e0da 40%, #c9c4bc 70%, #8f8981 100%);
+  clip-path: polygon(0 28%, 14% 4%, 30% 36%, 50% 0, 70% 34%, 86% 6%, 100% 28%, 100% 100%, 0 100%);
+}
+
+.cigar-ember {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  top: 7px;
+  height: 6px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, #fff3c4 0%, #ffb347 35%, var(--brace) 70%, transparent 100%);
+  box-shadow: 0 0 8px 2px rgba(226, 102, 45, 0.7), 0 0 18px 5px rgba(226, 102, 45, 0.3);
+  animation: ember-flicker 1.2s ease-in-out infinite alternate;
+  animation-delay: calc(var(--i) * -170ms);
+}
+
+.cigar-band {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 34%;
+  height: 6px;
+  background: linear-gradient(90deg, var(--bordeaux), var(--oro-chiaro) 45%, var(--bordeaux));
+  border-top: 1px solid rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.3);
+}
+
+.cigar-smoke {
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  width: 7px;
+  height: 7px;
+  margin-left: -3px;
+  border-radius: 50%;
+  background: rgba(230, 224, 214, 0.55);
+  filter: blur(2px);
+  opacity: 0;
+  --rise: -26px;
+  animation: smoke-rise 3s ease-out infinite;
+  animation-delay: calc(var(--i) * 230ms + 0.9s);
+}
+
+.cigar-smoke-2 {
+  --dx: -7px;
+  animation-delay: calc(var(--i) * 230ms + 2.3s);
+}
+
+.cigar-chart-labels {
+  display: flex;
+  gap: 6px;
+  margin-top: 0.35rem;
+}
+
+.cigar-chart-labels span {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 0.66rem;
+  color: rgba(246, 237, 224, 0.6);
+  white-space: nowrap;
+}
+
+.cigar-chart-labels strong {
+  font-size: 0.85rem;
+  color: var(--oro-chiaro);
+}
+
+.cigar-chart-labels em {
+  font-style: normal;
+}
+
+/* Durata delle fumate: sigari orizzontali che si consumano */
+
+.burn-hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem 1.4rem;
+  margin-bottom: 1rem;
+}
+
+.burn-hero-main {
+  display: flex;
+  flex-direction: column;
+}
+
+.burn-hero-value {
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 2.3rem;
+  font-weight: 700;
+  line-height: 1.05;
+  color: var(--oro-chiaro);
+  text-shadow: 0 0 18px rgba(226, 102, 45, 0.45);
+}
+
+.burn-hero-value-muted {
+  color: rgba(246, 237, 224, 0.35);
+  text-shadow: none;
+}
+
+.burn-hero-label {
+  font-size: 0.78rem;
+  color: rgba(246, 237, 224, 0.7);
+}
+
+.burn-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.burn-chips li {
+  display: flex;
+  flex-direction: column;
+  padding: 0.35rem 0.7rem;
+  background: rgba(246, 237, 224, 0.07);
+  border: 1px solid rgba(233, 196, 106, 0.22);
+  border-radius: 8px;
   font-size: 0.68rem;
-  color: var(--testo-tenue);
-  text-align: center;
+  color: rgba(246, 237, 224, 0.65);
+}
+
+.burn-chips strong {
+  font-size: 0.85rem;
+  color: var(--crema);
+}
+
+.burn-rows {
+  position: relative;
+}
+
+.burn-row {
+  padding-top: 15px;
+}
+
+@keyframes ash-grow {
+  from { width: 0; }
+}
+
+@keyframes ember-travel {
+  from { left: 0; }
+}
+
+.burn-track {
+  position: relative;
+  height: 14px;
+  border-radius: 7px;
+  background: linear-gradient(180deg, #a8713a 0%, #8a5a2b 35%, #5c3a1e 75%, #3a2213 100%);
+  box-shadow: inset 0 -2px 3px rgba(0, 0, 0, 0.35), 0 2px 5px rgba(0, 0, 0, 0.4);
+}
+
+.burn-track::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 11%;
+  width: 8px;
+  background: linear-gradient(90deg, var(--bordeaux), var(--oro-chiaro) 45%, var(--bordeaux));
+}
+
+.burn-ash {
+  position: absolute;
+  z-index: 1;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: var(--p);
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.2) 0 2px, transparent 2px 6px),
+    linear-gradient(180deg, #e8e4de 0%, #bdb7ae 55%, #8f8981 100%);
+  clip-path: polygon(0 14%, 4px 0, 9px 22%, 14px 4%, 100% 0, 100% 100%, 14px 100%, 9px 80%, 4px 100%, 0 86%);
+  animation: ash-grow 1.2s cubic-bezier(0.22, 0.8, 0.3, 1) both;
+  animation-delay: calc(var(--i) * 90ms);
+}
+
+.burn-ember {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  left: var(--p);
+  width: 14px;
+  height: 22px;
+  transform: translate(-50%, -50%);
+  animation: ember-travel 1.2s cubic-bezier(0.22, 0.8, 0.3, 1) both;
+  animation-delay: calc(var(--i) * 90ms);
+}
+
+.burn-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff3c4 0%, #ffb347 30%, var(--brace) 60%, transparent 75%);
+  box-shadow: 0 0 10px 3px rgba(226, 102, 45, 0.65), 0 0 24px 7px rgba(226, 102, 45, 0.3);
+  animation: ember-flicker 1.3s ease-in-out infinite alternate;
+  animation-delay: calc(var(--i) * -210ms);
+}
+
+.burn-smoke {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 8px;
+  height: 8px;
+  margin-left: -4px;
+  border-radius: 50%;
+  background: rgba(230, 224, 214, 0.5);
+  filter: blur(2px);
+  opacity: 0;
+  --rise: -14px;
+  animation: smoke-rise 2.8s ease-out infinite;
+  animation-delay: calc(var(--i) * 90ms + 1.2s);
+}
+
+.burn-smoke-2 {
+  --dx: -6px;
+  animation-delay: calc(var(--i) * 90ms + 2.6s);
+}
+
+.burn-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.8rem;
+  margin-top: 0.4rem;
+  font-size: 0.74rem;
+  color: rgba(246, 237, 224, 0.68);
+}
+
+.burn-name {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.burn-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-shrink: 0;
+}
+
+.burn-time strong {
+  font-size: 0.82rem;
+  color: var(--crema);
+}
+
+.burn-relights {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+}
+
+.burn-relights small {
+  margin-left: 2px;
+  color: var(--brace);
+}
+
+.burn-flame {
+  fill: var(--brace);
+  filter: drop-shadow(0 0 3px rgba(226, 102, 45, 0.8));
+}
+
+.burn-avg-line {
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  bottom: 0;
+  border-left: 1px dashed rgba(233, 196, 106, 0.7);
+  pointer-events: none;
+}
+
+.burn-avg-line span {
+  position: absolute;
+  top: -2px;
+  left: 4px;
+  font-size: 0.62rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--oro-chiaro);
+}
+
+.burn-panel-compact {
+  margin: 1rem 0;
+  padding-bottom: 0.9rem;
+}
+
+.burn-panel-compact .burn-rows {
+  margin-top: 0.4rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cigar-bar,
+  .cigar-ember,
+  .burn-ash,
+  .burn-ember,
+  .burn-glow {
+    animation: none;
+  }
+
+  .cigar-smoke,
+  .burn-smoke {
+    display: none;
+  }
 }
 
 .humidor-actions {
@@ -1367,7 +1723,20 @@ header {
   }
 
   .humidor-charts {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .burn-panel {
+    padding: 1rem 0.9rem 1.1rem;
+  }
+
+  .cigar-chart-bars,
+  .cigar-chart-labels {
+    gap: 4px;
+  }
+
+  .cigar-chart-labels span:nth-child(even) em {
+    visibility: hidden;
   }
 
   .humidor-actions button {
