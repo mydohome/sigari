@@ -671,13 +671,8 @@ button.stat-card-link:hover {
   box-shadow: 0 6px 18px var(--ombra);
 }
 
-.humidor-charts {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 1.4rem;
-}
 
-.humidor-charts h3,
+.burn-chart-panel h3,
 .burn-title {
   margin: 0 0 0.6rem;
   font-size: 0.8rem;
@@ -686,6 +681,18 @@ button.stat-card-link:hover {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--oro-chiaro);
+}
+
+.burn-chart-panel h3 {
+  margin-bottom: 0.2rem;
+  text-align: center;
+}
+
+.burn-subtitle {
+  margin: 0 0 0.3rem;
+  text-align: center;
+  font-size: 0.74rem;
+  color: rgba(246, 237, 224, 0.6);
 }
 
 @keyframes ember-flicker {
@@ -705,6 +712,7 @@ button.stat-card-link:hover {
 
 .cigar-chart-bars {
   display: flex;
+  justify-content: center;
   align-items: flex-end;
   gap: 6px;
   height: 178px;
@@ -715,6 +723,7 @@ button.stat-card-link:hover {
 .cigar-col {
   flex: 1 1 0;
   min-width: 0;
+  max-width: 64px;
   display: flex;
   justify-content: center;
   align-items: flex-end;
@@ -735,6 +744,19 @@ button.stat-card-link:hover {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.45);
   animation: cigar-grow 0.9s cubic-bezier(0.22, 0.8, 0.3, 1) both;
   animation-delay: calc(var(--i) * 70ms);
+}
+
+.cigar-bar-vuoto {
+  max-width: 26px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(246, 237, 224, 0.2);
+  box-shadow: none;
+  animation: none;
+}
+
+.cigar-label-vuoto strong {
+  color: rgba(246, 237, 224, 0.4);
 }
 
 .cigar-ash {
@@ -794,28 +816,39 @@ button.stat-card-link:hover {
 
 .cigar-chart-labels {
   display: flex;
+  justify-content: center;
   gap: 6px;
-  margin-top: 0.35rem;
+  margin-top: 0.4rem;
 }
 
 .cigar-chart-labels span {
   flex: 1 1 0;
   min-width: 0;
+  max-width: 64px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  font-size: 0.66rem;
-  color: rgba(246, 237, 224, 0.6);
+  text-align: center;
+  line-height: 1.25;
   white-space: nowrap;
 }
 
 .cigar-chart-labels strong {
-  font-size: 0.85rem;
+  font-size: 1rem;
   color: var(--oro-chiaro);
 }
 
 .cigar-chart-labels em {
   font-style: normal;
+  font-size: 0.78rem;
+  color: var(--crema);
+}
+
+.cigar-chart-labels small {
+  font-size: 0.64rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(246, 237, 224, 0.5);
 }
 
 /* Durata delle fumate: sigari orizzontali che si consumano */
@@ -1722,10 +1755,6 @@ header {
     white-space: nowrap;
   }
 
-  .humidor-charts {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
   .burn-panel {
     padding: 1rem 0.9rem 1.1rem;
   }
@@ -1733,10 +1762,6 @@ header {
   .cigar-chart-bars,
   .cigar-chart-labels {
     gap: 4px;
-  }
-
-  .cigar-chart-labels span:nth-child(even) em {
-    visibility: hidden;
   }
 
   .humidor-actions button {
