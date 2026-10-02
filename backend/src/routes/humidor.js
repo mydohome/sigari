@@ -4,6 +4,9 @@ const pool = require("../db/pool");
 const { requireAuth } = require("../middleware/auth");
 
 const router = express.Router();
+
+// Sotto questa soglia di fumate cronometrate la durata media non e' significativa
+const MIN_CAMPIONI_DURATA = 5;
 router.use(requireAuth);
 
 // Trova una tabaccheria gia' salvata (stesso nome+indirizzo) o ne crea una nuova.
@@ -348,7 +351,6 @@ router.get("/fumate/stats/:productId", async (req, res) => {
       [req.userId, req.params.productId]
     );
     const r = rows[0];
-    const MIN_CAMPIONI_DURATA = 5;
     const fumateConDurata = Number(r.fumate_con_durata);
     res.json({
       fumate_totali: Number(r.fumate_totali),
@@ -582,7 +584,6 @@ router.get("/stats", async (req, res) => {
 
     // La media diventa significativa solo con un minimo di campioni: sotto
     // soglia la nascondiamo invece di mostrare un numero fuorviante.
-    const MIN_CAMPIONI_DURATA = 5;
     const fumateConDurata = Number(durata.rows[0].fumate_con_durata);
     const durataMediaMinuti =
       fumateConDurata >= MIN_CAMPIONI_DURATA && durata.rows[0].durata_media_minuti
@@ -599,6 +600,7 @@ router.get("/stats", async (req, res) => {
       media_annuale: Number(mediaAnnuale.toFixed(2)),
       durata_media_minuti: durataMediaMinuti,
       fumate_con_durata: fumateConDurata,
+      min_campioni_durata: MIN_CAMPIONI_DURATA,
       serie_settimanale: serieSettimanale.map((r) => ({ periodo: r.periodo, totale: Number(r.totale) })),
       serie_mensile: serieMensile.map((r) => ({ periodo: r.periodo, totale: Number(r.totale) })),
       top_marche: marche.rows.map((r) => ({ marca: r.marca, totale: Number(r.totale) })),

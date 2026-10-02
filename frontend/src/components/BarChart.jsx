@@ -1,42 +1,47 @@
 import React from "react";
 
-// Piccolo grafico a barre in SVG puro, senza dipendenze esterne.
+const ALTEZZA_MAX = 136; // px del sigaro piu' alto
+const ALTEZZA_MIN = 22; // abbastanza per cenere + brace
+const ALTEZZA_MIN_FASCIA = 70; // sotto questa altezza la fascia dorata non entra
+
+// Grafico a barre in cui ogni barra e' un sigaro in piedi: cenere in cima,
+// brace che sfarfalla e un filo di fumo. Solo HTML/CSS, nessuna dipendenza.
 // data: [{ label, value }]
-export default function BarChart({ data, height = 120, formatLabel = (l) => l }) {
+export default function BarChart({ data, formatLabel = (l) => l, unit = "fumate" }) {
   if (!data || !data.length) {
     return <p className="status-msg small">Nessun dato ancora disponibile.</p>;
   }
 
   const max = Math.max(1, ...data.map((d) => d.value));
-  const barWidth = 100 / data.length;
 
   return (
-    <div className="bar-chart">
-      <svg viewBox={`0 0 100 ${height}`} preserveAspectRatio="none" className="bar-chart-svg">
+    <div className="cigar-chart">
+      <div className="cigar-chart-bars">
         {data.map((d, i) => {
-          const h = (d.value / max) * (height - 20);
-          const x = i * barWidth;
+          const h = Math.max(ALTEZZA_MIN, Math.round((d.value / max) * ALTEZZA_MAX));
           return (
-            <g key={i}>
-              <rect
-                x={x + barWidth * 0.15}
-                y={height - 20 - h}
-                width={barWidth * 0.7}
-                height={h}
-                rx="1.5"
-                className="bar-rect"
-              />
-              <text x={x + barWidth / 2} y={height - 20 - h - 3} className="bar-value" textAnchor="middle">
-                {d.value > 0 ? d.value : ""}
-              </text>
-            </g>
+            <div
+              key={i}
+              className="cigar-col"
+              style={{ "--h": `${h}px`, "--i": i }}
+              title={`${formatLabel(d.label)}: ${d.value} ${unit}`}
+            >
+              <div className="cigar-bar">
+                <i className="cigar-smoke cigar-smoke-1" />
+                <i className="cigar-smoke cigar-smoke-2" />
+                <i className="cigar-ash" />
+                <i className="cigar-ember" />
+                {h >= ALTEZZA_MIN_FASCIA && <i className="cigar-band" />}
+              </div>
+            </div>
           );
         })}
-      </svg>
-      <div className="bar-chart-labels">
+      </div>
+      <div className="cigar-chart-labels">
         {data.map((d, i) => (
-          <span key={i} style={{ width: `${barWidth}%` }}>
-            {formatLabel(d.label)}
+          <span key={i}>
+            <strong>{d.value}</strong>
+            <em>{formatLabel(d.label)}</em>
           </span>
         ))}
       </div>
