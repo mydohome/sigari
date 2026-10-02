@@ -138,6 +138,18 @@ export function IconBook({ size = 22 }) {
   );
 }
 
+// Tre sigari in piedi di altezza crescente su una linea di base — per la tab "Dashboard fumate"
+export function IconDashboard({ size = 22 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="4" y="13" width="3.6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.7" />
+      <rect x="10.2" y="8.5" width="3.6" height="10.5" rx="1.2" stroke="currentColor" strokeWidth="1.7" />
+      <rect x="16.4" y="4" width="3.6" height="15" rx="1.2" stroke="currentColor" strokeWidth="1.7" />
+      <line x1="3" y1="21.3" x2="21" y2="21.3" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 // Carrello acquisti, pulito a due colori — per il pulsante "registra acquisto"
 export function IconCart({ size = 28 }) {
   return (

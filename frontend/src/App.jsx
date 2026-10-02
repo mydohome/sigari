@@ -5,12 +5,13 @@ import AuthBar from "./components/AuthBar.jsx";
 import FavoritesTab from "./components/FavoritesTab.jsx";
 import WishlistTab from "./components/WishlistTab.jsx";
 import HumidorTab from "./components/HumidorTab.jsx";
+import DashboardFumateTab from "./components/DashboardFumateTab.jsx";
 import HumidorDashboard from "./components/HumidorDashboard.jsx";
 import GlobalActions from "./components/GlobalActions.jsx";
 import SettingsTab from "./components/SettingsTab.jsx";
 import WikiTab from "./components/WikiTab.jsx";
 import Logo from "./components/Logo.jsx";
-import { IconSearch, IconStar, IconGenieLamp, IconHumidor, IconBook, IconSettings } from "./components/icons/Icons.jsx";
+import { IconSearch, IconStar, IconGenieLamp, IconHumidor, IconDashboard, IconBook, IconSettings } from "./components/icons/Icons.jsx";
 import { searchPrices, fetchCategorie, fetchMarche, fetchProvenienze } from "./api.js";
 import { getStoredUser, clearSession } from "./auth.js";
 
@@ -19,6 +20,7 @@ const TABS = [
   { id: "preferiti", label: "Preferiti", Icon: IconStar },
   { id: "wishlist", label: "Wishlist", Icon: IconGenieLamp },
   { id: "humidor", label: "Humidor", Icon: IconHumidor },
+  { id: "dashboard", label: "Dashboard", Icon: IconDashboard },
   { id: "guida", label: "Guida", Icon: IconBook },
   { id: "impostazioni", label: "Impostazioni", Icon: IconSettings },
 ];
@@ -166,6 +168,13 @@ export default function App() {
             <HumidorTab refreshToken={humidorRefresh} />
           ) : (
             <p className="status-msg">Accedi per gestire il tuo humidor.</p>
+          ))}
+
+        {tab === "dashboard" &&
+          (user ? (
+            <DashboardFumateTab refreshToken={humidorRefresh} />
+          ) : (
+            <p className="status-msg">Accedi per vedere la dashboard delle tue fumate.</p>
           ))}
 
         {tab === "guida" && <WikiTab />}
