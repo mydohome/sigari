@@ -7,7 +7,15 @@ const ALTEZZA_MIN_FASCIA = 70; // sotto questa altezza la fascia dorata non entr
 // Grafico a barre in cui ogni barra e' un sigaro in piedi: cenere in cima,
 // brace che sfarfalla e un filo di fumo. Solo HTML/CSS, nessuna dipendenza.
 // data: [{ label, value }]
-export default function BarChart({ data, formatLabel = (l) => l, unit = "fumate" }) {
+// formatLabel: etichetta principale; formatSub(label, indice, data): seconda riga
+// facoltativa (es. il mese solo quando cambia); unitLabel: testo del tooltip.
+export default function BarChart({
+  data,
+  formatLabel = (l) => l,
+  formatSub = () => "",
+  unitLabel = formatLabel,
+  unit = "fumate",
+}) {
   if (!data || !data.length) {
     return <p className="status-msg small">Nessun dato ancora disponibile.</p>;
   }
@@ -18,13 +26,25 @@ export default function BarChart({ data, formatLabel = (l) => l, unit = "fumate"
     <div className="cigar-chart">
       <div className="cigar-chart-bars">
         {data.map((d, i) => {
+          if (d.value === 0) {
+            return (
+              <div
+                key={i}
+                className="cigar-col"
+                style={{ "--h": "4px", "--i": i }}
+                title={`${unitLabel(d.label)}: 0 ${unit}`}
+              >
+                <div className="cigar-bar cigar-bar-vuoto" />
+              </div>
+            );
+          }
           const h = Math.max(ALTEZZA_MIN, Math.round((d.value / max) * ALTEZZA_MAX));
           return (
             <div
               key={i}
               className="cigar-col"
               style={{ "--h": `${h}px`, "--i": i }}
-              title={`${formatLabel(d.label)}: ${d.value} ${unit}`}
+              title={`${unitLabel(d.label)}: ${d.value} ${unit}`}
             >
               <div className="cigar-bar">
                 <i className="cigar-smoke cigar-smoke-1" />
@@ -39,9 +59,10 @@ export default function BarChart({ data, formatLabel = (l) => l, unit = "fumate"
       </div>
       <div className="cigar-chart-labels">
         {data.map((d, i) => (
-          <span key={i}>
+          <span key={i} className={d.value === 0 ? "cigar-label-vuoto" : undefined}>
             <strong>{d.value}</strong>
             <em>{formatLabel(d.label)}</em>
+            <small>{formatSub(d.label, i, data) || "\u00a0"}</small>
           </span>
         ))}
       </div>

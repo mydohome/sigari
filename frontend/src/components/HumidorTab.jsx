@@ -28,6 +28,32 @@ function formatData(dateStr) {
 
 const MESI = ["Gen", "Feb", "Mar", "Apr", "Mag", "Giu", "Lug", "Ago", "Set", "Ott", "Nov", "Dic"];
 
+function chiaveGiorno(d) {
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
+
+// Il backend restituisce solo i periodi con almeno una fumata: qui aggiungiamo
+// a zero quelli intermedi, cosi' le pause non spariscono dal grafico.
+// passo: "settimana" | "mese". Mantiene gli ultimi `max` periodi.
+function riempiSerie(serie, passo, max = 12) {
+  if (!serie.length) return [];
+  const valori = new Map(serie.map((s) => [chiaveGiorno(new Date(s.periodo)), s.totale]));
+  const primo = new Date(serie[0].periodo);
+  const ultimo = new Date(serie[serie.length - 1].periodo);
+  const risultato = [];
+  for (
+    let d = new Date(primo.getFullYear(), primo.getMonth(), primo.getDate());
+    d <= ultimo;
+    d =
+      passo === "mese"
+        ? new Date(d.getFullYear(), d.getMonth() + 1, 1)
+        : new Date(d.getFullYear(), d.getMonth(), d.getDate() + 7)
+  ) {
+    risultato.push({ label: d, value: valori.get(chiaveGiorno(d)) ?? 0 });
+  }
+  return risultato.slice(-max);
+}
+
 // Un aggiornamento più vecchio di 3 ore probabilmente indica un sensore Home
 // Assistant offline o un'automazione ferma: lo segnaliamo invece di mostrare
 // silenziosamente un dato ormai vecchio.
@@ -493,22 +519,40 @@ export default function HumidorTab({ refreshToken }) {
       )}
 
       {stats && (stats.serie_settimanale.length > 0 || stats.serie_mensile.length > 0) && (
-        <div className="humidor-charts burn-panel">
-          <div>
-            <h3>Fumate per settimana</h3>
-            <BarChart
-              data={stats.serie_settimanale.map((s) => ({ label: s.periodo, value: s.totale }))}
-              formatLabel={(d) => formatData(d).slice(0, 5)}
-            />
-          </div>
-          <div>
-            <h3>Fumate per mese</h3>
-            <BarChart
-              data={stats.serie_mensile.map((s) => ({ label: s.periodo, value: s.totale }))}
-              formatLabel={(d) => MESI[new Date(d).getMonth()]}
-            />
-          </div>
-        </div>
+        <>
+          {stats.serie_settimanale.length > 0 && (
+            <section className="burn-panel burn-chart-panel">
+              <h3>Fumate per settimana</h3>
+              <p className="burn-subtitle">Un sigaro per ogni settimana, indicata dal lunedì</p>
+              <BarChart
+                data={riempiSerie(stats.serie_settimanale, "settimana")}
+                formatLabel={(d) => String(new Date(d).getDate())}
+                formatSub={(d, i, data) => {
+                  const mese = new Date(d).getMonth();
+                  const precedente = i > 0 ? new Date(data[i - 1].label).getMonth() : null;
+                  return mese !== precedente ? MESI[mese] : "";
+                }}
+                unitLabel={(d) => `settimana del ${formatData(d)}`}
+              />
+            </section>
+          )}
+          {stats.serie_mensile.length > 0 && (
+            <section className="burn-panel burn-chart-panel">
+              <h3>Fumate per mese</h3>
+              <p className="burn-subtitle">Un sigaro per ogni mese</p>
+              <BarChart
+                data={riempiSerie(stats.serie_mensile, "mese")}
+                formatLabel={(d) => MESI[new Date(d).getMonth()]}
+                formatSub={(d, i, data) => {
+                  const anno = new Date(d).getFullYear();
+                  const precedente = i > 0 ? new Date(data[i - 1].label).getFullYear() : null;
+                  return anno !== precedente ? String(anno) : "";
+                }}
+                unitLabel={(d) => `${MESI[new Date(d).getMonth()]} ${new Date(d).getFullYear()}`}
+              />
+            </section>
+          )}
+        </>
       )}
 
       {stats && <DurataFumate fumate={fumate} stats={stats} />}
