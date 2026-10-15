@@ -33,7 +33,9 @@ router.get("/search", optionalAuth, async (req, res) => {
   const limit = Math.min(parseInt(pageSize, 10) || 20, 100);
   const offset = (Math.max(parseInt(page, 10) || 1, 1) - 1) * limit;
 
-  const conditions = [];
+  // Solo i prodotti presenti nell'ultimo listino: con lo storico in archivio ci
+  // sono anche prodotti usciti dalla tariffa, che non vanno proposti come attuali.
+  const conditions = ["latest.valido_dal = (SELECT MAX(valido_dal) FROM prices)"];
   const params = [];
 
   if (q.trim()) {
@@ -60,29 +62,47 @@ router.get("/search", optionalAuth, async (req, res) => {
   params.push(offset);
   const offsetIdx = params.length;
 
+  // La variazione (ultimo cambio di prezzo e prezzo precedente) e' calcolata
+  // solo sulla pagina di risultati, non su tutto il listino.
   const sql = `
-    SELECT
-      p.id AS product_id,
-      p.marca,
-      p.categoria,
-      p.formato,
-      p.provenienza,
-      p.pezzi_per_confezione,
-      latest.prezzo_confezione,
-      latest.prezzo_singolo,
-      latest.valido_dal,
-      latest.fonte_url
-    FROM products p
-    JOIN LATERAL (
-      SELECT prezzo_confezione, prezzo_singolo, valido_dal, fonte_url
-      FROM prices pr
-      WHERE pr.product_id = p.id
-      ORDER BY pr.valido_dal DESC
+    SELECT page.*, variazione.variazione_il, variazione.prezzo_precedente
+    FROM (
+      SELECT
+        p.id AS product_id,
+        p.marca,
+        p.categoria,
+        p.formato,
+        p.provenienza,
+        p.pezzi_per_confezione,
+        latest.prezzo_confezione,
+        latest.prezzo_singolo,
+        latest.valido_dal,
+        latest.fonte_url
+      FROM products p
+      JOIN LATERAL (
+        SELECT prezzo_confezione, prezzo_singolo, valido_dal, fonte_url
+        FROM prices pr
+        WHERE pr.product_id = p.id
+        ORDER BY pr.valido_dal DESC
+        LIMIT 1
+      ) latest ON true
+      ${whereClause}
+      ORDER BY p.marca ASC, p.id ASC
+      LIMIT $${limitIdx} OFFSET $${offsetIdx}
+    ) page
+    LEFT JOIN LATERAL (
+      SELECT storico.valido_dal AS variazione_il, storico.precedente AS prezzo_precedente
+      FROM (
+        SELECT valido_dal, prezzo_confezione,
+               LEAD(prezzo_confezione) OVER (ORDER BY valido_dal DESC) AS precedente
+        FROM prices pr
+        WHERE pr.product_id = page.product_id
+      ) storico
+      WHERE storico.precedente IS NOT NULL AND storico.precedente <> storico.prezzo_confezione
+      ORDER BY storico.valido_dal DESC
       LIMIT 1
-    ) latest ON true
-    ${whereClause}
-    ORDER BY p.marca ASC
-    LIMIT $${limitIdx} OFFSET $${offsetIdx};
+    ) variazione ON true
+    ORDER BY page.marca ASC, page.product_id ASC;
   `;
 
   try {
@@ -120,58 +140,24 @@ router.get("/search", optionalAuth, async (req, res) => {
   }
 });
 
-// GET /api/prices/:productId/history
+// GET /api/prices/:productId/history?anni=5
+// Storico dei prezzi dal piu' recente al piu' vecchio, limitato agli ultimi
+// `anni` anni (default 5): i listini FIT disponibili partono dal gennaio 2023.
 router.get("/:productId/history", async (req, res) => {
   const { productId } = req.params;
+  const anni = Math.min(Math.max(parseInt(req.query.anni, 10) || 5, 1), 10);
   try {
     const { rows } = await pool.query(
       `SELECT prezzo_confezione, prezzo_singolo, valido_dal, fonte_url, fonte_documento
        FROM prices
-       WHERE product_id = $1
+       WHERE product_id = $1 AND valido_dal >= (CURRENT_DATE - make_interval(years => $2::int))
        ORDER BY valido_dal DESC`,
-      [productId]
+      [productId, anni]
     );
     res.json({ history: rows });
   } catch (err) {
     console.error("Errore storico prezzi:", err);
     res.status(500).json({ error: "Errore nel recupero dello storico." });
-  }
-});
-
-// GET /api/prices/categorie
-router.get("/meta/categorie", async (_req, res) => {
-  try {
-    const { rows } = await pool.query(
-      `SELECT DISTINCT categoria FROM products ORDER BY categoria ASC`
-    );
-    res.json({ categorie: rows.map((r) => r.categoria) });
-  } catch (err) {
-    console.error("Errore recupero categorie:", err);
-    res.status(500).json({ error: "Errore nel recupero delle categorie." });
-  }
-});
-
-// GET /api/prices/meta/marche
-router.get("/meta/marche", async (_req, res) => {
-  try {
-    const { rows } = await pool.query(`SELECT DISTINCT marca FROM products ORDER BY marca ASC`);
-    res.json({ marche: rows.map((r) => r.marca) });
-  } catch (err) {
-    console.error("Errore recupero marche:", err);
-    res.status(500).json({ error: "Errore nel recupero delle marche." });
-  }
-});
-
-// GET /api/prices/meta/provenienze
-router.get("/meta/provenienze", async (_req, res) => {
-  try {
-    const { rows } = await pool.query(
-      `SELECT DISTINCT provenienza FROM products WHERE provenienza IS NOT NULL ORDER BY provenienza ASC`
-    );
-    res.json({ provenienze: rows.map((r) => r.provenienza) });
-  } catch (err) {
-    console.error("Errore recupero provenienze:", err);
-    res.status(500).json({ error: "Errore nel recupero delle provenienze." });
   }
 });
 

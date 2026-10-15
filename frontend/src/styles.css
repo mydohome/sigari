@@ -9,6 +9,8 @@
   --oro: #c9992e;
   --oro-chiaro: #e9c46a;
   --brace: #e2662d;
+  --rialzo: #b3261e;
+  --ribasso: #2f7d4f;
   --bordeaux: #7a2020;
   --testo: #2b1810;
   --testo-tenue: #6b5744;
@@ -2079,5 +2081,212 @@ header {
 
   .wiki-format-misure {
     white-space: normal;
+  }
+}
+
+/* --- Storico prezzi: freccia nei risultati e grafico a gradini --- */
+
+.prezzo-con-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.price-trend {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.6rem;
+  height: 1.6rem;
+  padding: 0 0.3rem;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: none;
+  font-size: var(--fs-small);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.price-trend.su {
+  color: var(--rialzo);
+  background: rgba(179, 38, 30, 0.1);
+  border-color: rgba(179, 38, 30, 0.3);
+}
+
+.price-trend.giu {
+  color: var(--ribasso);
+  background: rgba(47, 125, 79, 0.1);
+  border-color: rgba(47, 125, 79, 0.3);
+}
+
+.price-trend.neutro {
+  color: var(--testo-tenue);
+  opacity: 0.6;
+}
+
+.price-trend:hover {
+  opacity: 1;
+  border-color: var(--oro);
+}
+
+@media (min-width: 641px) {
+  .modal-box.modal-box-wide {
+    max-width: 700px;
+  }
+}
+
+.price-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.6rem;
+  margin-bottom: 0.8rem;
+}
+
+.price-summary > div {
+  display: flex;
+  flex-direction: column;
+}
+
+.price-summary-label {
+  font-size: var(--fs-small);
+  color: var(--testo-tenue);
+}
+
+.price-summary-value {
+  font-family: var(--font-titoli);
+  font-size: var(--fs-xl);
+  color: var(--tabacco-800);
+}
+
+.price-delta.su {
+  color: var(--rialzo);
+}
+
+.price-delta.giu {
+  color: var(--ribasso);
+}
+
+.price-serie-toggle {
+  display: inline-flex;
+  margin-bottom: 0.7rem;
+  border: 1px solid #d8c8ab;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.price-serie-toggle button {
+  padding: 0.35rem 0.8rem;
+  border: none;
+  background: var(--crema-carta);
+  color: var(--testo-tenue);
+  cursor: pointer;
+}
+
+.price-serie-toggle button.active {
+  background: var(--tabacco-800);
+  color: var(--oro-chiaro);
+  font-weight: 600;
+}
+
+.price-chart {
+  position: relative;
+  padding: 0.6rem 0.4rem 0.2rem;
+  color: var(--crema);
+  background:
+    radial-gradient(120% 90% at 15% 0%, rgba(201, 153, 46, 0.12) 0%, transparent 55%),
+    linear-gradient(160deg, var(--tabacco-800) 0%, var(--tabacco-900) 55%, var(--tabacco-950) 100%);
+  border: 1px solid var(--tabacco-700);
+  border-radius: 12px;
+}
+
+.price-chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  touch-action: pan-y;
+  overflow: visible;
+}
+
+.price-grid {
+  stroke: rgba(246, 237, 224, 0.1);
+  stroke-width: 1;
+}
+
+.price-axis-line {
+  stroke: rgba(233, 196, 106, 0.35);
+  stroke-width: 1;
+}
+
+.price-axis {
+  font-size: 11px;
+  fill: rgba(246, 237, 224, 0.65);
+  font-family: var(--font-testo);
+}
+
+.price-line {
+  fill: none;
+  stroke: var(--oro-chiaro);
+  stroke-width: 2.4;
+  stroke-linejoin: round;
+}
+
+.price-dot {
+  fill: var(--tabacco-900);
+  stroke: var(--oro-chiaro);
+  stroke-width: 1.8;
+}
+
+.price-now {
+  fill: #fff3c4;
+}
+
+.price-now-glow {
+  fill: var(--brace);
+  opacity: 0.55;
+  filter: blur(3px);
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ember-flicker 1.3s ease-in-out infinite alternate;
+}
+
+.price-hover-line {
+  stroke: rgba(246, 237, 224, 0.4);
+  stroke-dasharray: 3 3;
+}
+
+.price-hover-dot {
+  fill: var(--oro-chiaro);
+  stroke: var(--tabacco-950);
+  stroke-width: 2;
+}
+
+.price-tooltip {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  padding: 0.35rem 0.6rem;
+  transform: translate(-50%, calc(-100% - 12px));
+  background: var(--tabacco-950);
+  border: 1px solid var(--oro);
+  border-radius: 8px;
+  white-space: nowrap;
+  pointer-events: none;
+  font-size: var(--fs-small);
+  color: rgba(246, 237, 224, 0.8);
+}
+
+.price-tooltip strong {
+  color: var(--oro-chiaro);
+  font-size: var(--fs-body);
+}
+
+.price-note {
+  margin: 0.7rem 0 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .price-now-glow {
+    animation: none;
   }
 }

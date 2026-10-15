@@ -50,8 +50,8 @@ export async function fetchProvenienze() {
   return handle(res);
 }
 
-export async function fetchHistory(productId) {
-  const res = await fetch(`${API_BASE}/prices/${productId}/history`);
+export async function fetchHistory(productId, anni = 5) {
+  const res = await fetch(`${API_BASE}/prices/${productId}/history?anni=${anni}`);
   return handle(res);
 }
 
