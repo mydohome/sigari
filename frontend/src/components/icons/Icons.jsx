@@ -150,6 +150,22 @@ export function IconDashboard({ size = 22 }) {
   );
 }
 
+// Andamento prezzi: linea spezzata con punta finale — per aprire lo storico di un prodotto
+export function IconTrend({ size = 16 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <polyline
+        points="3,17 9,11 13,15 21,6"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <polyline points="15,6 21,6 21,12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 // Carrello acquisti, pulito a due colori — per il pulsante "registra acquisto"
 export function IconCart({ size = 28 }) {
   return (

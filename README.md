@@ -46,6 +46,25 @@ Il link al file cambia nome ad ogni variazione tariffaria (es.
 `/images/XLS/20260911/sigari_20260911.xls`), quindi ad ogni ciclo di scraping la
 pagina indice viene riletta per trovare il file corrente.
 
+### Storico prezzi
+
+FIT lascia online anche i listini passati, ognuno in una cartella con la data nel
+percorso (circa 1-2 al mese, **disponibili dal gennaio 2023**). Il ciclo di scraping,
+oltre al listino corrente, prova ogni giorno trascorso dall'ultimo listino in archivio
+e recupera quelli intermedi che lo scraping settimanale avrebbe saltato. Per caricare
+tutto lo storico disponibile (una tantum, idempotente, qualche minuto):
+
+```bash
+docker compose exec backend node src/scraper/backfill.js            # dal 2023-01-01
+docker compose exec backend node src/scraper/backfill.js --da 2025-01-01
+```
+
+Nella ricerca, accanto al prezzo singolo compare una freccia rossa (aumento) o verde
+(diminuzione) se il prezzo è cambiato negli ultimi 180 giorni; cliccandola, o l'icona
+dell'andamento presente sulle altre righe, si apre il grafico dello storico (fino a 5
+anni, nei limiti dei listini disponibili). Nella ricerca compaiono solo i prodotti
+presenti nell'ultimo listino: quelli usciti dalla tariffa restano nello storico.
+
 ## Avvio con Docker
 
 ```bash
@@ -99,7 +118,7 @@ frontend/
 
 - `GET /api/prices/search?q=cohiba&categoria=Sigari` — ricerca prezzi correnti (include flag `preferito`/`in_wishlist` se autenticato)
 - `GET /api/prices/autocomplete?q=coh` — suggerimenti marche per l'autocompletamento
-- `GET /api/prices/:productId/history` — storico prezzi di un prodotto
+- `GET /api/prices/:productId/history?anni=5` — storico prezzi di un prodotto (default ultimi 5 anni)
 - `GET /api/prices/meta/categorie` — elenco categorie disponibili
 - `POST /api/auth/register` / `POST /api/auth/login` — creazione account / login, restituiscono un JWT
 - `GET /api/favorites`, `POST /api/favorites`, `PATCH /api/favorites/:productId`, `DELETE /api/favorites/:productId` — gestione preferiti (richiede `Authorization: Bearer <token>`)

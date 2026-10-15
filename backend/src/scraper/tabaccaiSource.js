@@ -65,6 +65,21 @@ async function downloadXls(url) {
   return Buffer.from(res.data);
 }
 
+function urlListinoSigari(yyyymmdd) {
+  return `https://www.tabaccai.it/images/XLS/${yyyymmdd}/sigari_${yyyymmdd}.xls`;
+}
+
+// I vecchi listini restano online (cartella con la data nel percorso): una HEAD
+// basta per sapere se in quel giorno e' stato pubblicato un listino.
+async function listinoEsiste(url) {
+  const res = await axios.head(url, {
+    headers: { "User-Agent": USER_AGENT },
+    timeout: 20000,
+    validateStatus: (status) => status === 200 || status === 404,
+  });
+  return res.status === 200;
+}
+
 function formatDataPubblicazione(yyyymmdd) {
   return `${yyyymmdd.slice(0, 4)}-${yyyymmdd.slice(4, 6)}-${yyyymmdd.slice(6, 8)}`;
 }
@@ -74,5 +89,7 @@ module.exports = {
   fetchTariffePage,
   findSigariXlsLink,
   downloadXls,
+  urlListinoSigari,
+  listinoEsiste,
   formatDataPubblicazione,
 };
