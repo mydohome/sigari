@@ -73,6 +73,10 @@ backend/
       wishlist.js     CRUD wishlist + totale (richiede auth)
       reviews.js       GET/generate recensione
       admin.js          stato scraping, scrape forzato, import CSV manuale
+      humidor.js        umidor personale: acquisti (lotti), fumate, recensioni utente, location, statistiche
+      settings.js       backup/ripristino JSON dei dati personali, versione app, integrazione Home Assistant
+      ha.js             endpoint per Home Assistant (stats, temperatura/umidita' per location), protetti da HA_API_KEY
+      export.js         export Excel (.xlsx) di sigari posseduti e fumate
 frontend/
   src/
     auth.js              gestione token JWT in localStorage
@@ -81,7 +85,13 @@ frontend/
     components/
       SearchBar.jsx (autocomplete), ResultsTable.jsx (azioni preferito/wishlist/recensione),
       ReviewPanel.jsx, FavoritesTab.jsx, WishlistTab.jsx, AuthBar.jsx
+      HumidorTab.jsx, DashboardFumateTab.jsx, PurchaseModal.jsx, FumataModal.jsx,
+      GlobalActions.jsx (pulsanti rapidi acquisto/fumata), PriceHistoryModal.jsx,
+      SettingsTab.jsx (location, Home Assistant, export Excel, backup), WikiTab.jsx
 ```
+
+Nota: la struttura sopra e' un riepilogo, non esaustivo; per l'elenco completo vedi `backend/src` e
+`frontend/src/components`.
 
 ## Variabili d'ambiente richieste (.env)
 
@@ -93,7 +103,29 @@ JWT_SECRET        # firma i token di login — MAI vuoto
 ANTHROPIC_API_KEY # per generare recensioni
 REVIEW_SOURCES    # domini consentiti per web_search, separati da virgola
 REVIEW_MODEL      # default claude-haiku-4-5-20251001
+HA_API_KEY        # opzionale: abilita l'integrazione Home Assistant (openssl rand -hex 32)
 ```
+
+## Aggiornamento: funzionalita' aggiunte dopo la prima stesura
+
+Il documento originale copriva solo ricerca prezzi, preferiti, wishlist e recensioni AI. Da allora
+sono state aggiunte (dettagli nel `README.md`):
+
+- **Umidor personale**: acquisti registrati come lotti (`humidor_items`, con prezzo **per singolo
+  sigaro**, quantita' iniziale/rimanente, tabaccheria, location), fumate (`humidor_fumate`, con orari,
+  durata e riaccensioni facoltativi) e recensioni/voti personali (`humidor_reviews`).
+- **Location** (Humidor, Giara, Vetro, personalizzabili) con temperatura/umidita' valorizzate da Home Assistant.
+- **Dashboard fumate**, **storico prezzi** (backfill dal gennaio 2023 con `src/scraper/backfill.js`),
+  provenienza dei prodotti (`src/data/provenienze.js`), tab Wiki.
+- **Impostazioni**: backup/ripristino JSON dei dati personali (esclude il catalogo prezzi, sempre
+  ricostruibile), controllo versione su GitHub, integrazione Home Assistant.
+- **Export Excel** (`backend/src/routes/export.js`): `GET /api/export/xlsx?tipo=sigari|fumate|tutto`,
+  richiede login e riguarda solo l'utente loggato. Genera con la libreria `xlsx` (gia' dipendenza) un
+  file con i fogli "Sigari posseduti" (solo lotti con quantita' rimanente > 0, con totali) e "Fumate"
+  (storico completo, con durata calcolata e voto). I pulsanti sono in Impostazioni > "Esporta in Excel".
+  Il download lato frontend passa da `fetch` con header di autenticazione (`downloadExportXlsx` in
+  `api.js`), perche' un semplice link non invierebbe il token JWT.
+- Deploy/aggiornamento: `./update.sh` sul server (mostra gli aggiornamenti e chiede conferma).
 
 ## Cosa NON è ancora stato fatto / possibili prossimi passi
 
@@ -102,5 +134,5 @@ REVIEW_MODEL      # default claude-haiku-4-5-20251001
 - Il parser XLS (`xlsxParser.js`) assume la struttura colonne attuale di tabaccai.it;
   se cambia, va aggiornato lì.
 - Nessuna paginazione/infinite-scroll lato frontend oltre al `pageSize` di default (20).
-- Il repository git locale è in fase di setup sul Mac dell'utente (non ancora fatto
-  push su GitHub al momento di scrivere questo documento).
+- L'export Excel include solo i sigari ancora posseduti, non lo storico dei lotti esauriti
+  (aggiungibile come terzo foglio in `export.js`).

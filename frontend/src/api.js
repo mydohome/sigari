@@ -364,3 +364,32 @@ export async function fetchHaIntegration() {
   const res = await fetch(`${API_BASE}/settings/ha-integration`, { headers: { ...authHeaders() } });
   return handle(res);
 }
+
+// --- Export Excel (tipo: "tutto" | "sigari" | "fumate") ---
+
+export async function downloadExportXlsx(tipo = "tutto") {
+  const res = await fetch(`${API_BASE}/export/xlsx?tipo=${encodeURIComponent(tipo)}`, {
+    headers: { ...authHeaders() },
+  });
+  if (!res.ok) {
+    let message = `Errore ${res.status}`;
+    try {
+      const data = await res.json();
+      if (data?.error) message = data.error;
+    } catch {
+      /* ignore */
+    }
+    throw new Error(message);
+  }
+  const blob = await res.blob();
+  const match = /filename="?([^";]+)"?/.exec(res.headers.get("Content-Disposition") || "");
+  const filename = match ? match[1] : `humidor-${tipo}.xlsx`;
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
