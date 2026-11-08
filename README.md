@@ -10,6 +10,7 @@ ogni settimana.
 - **Preferiti**: aggiungi un sigaro dalla ricerca (☆), assegnagli un tag personale (es. "da riprovare"), gestiscili nella scheda "Preferiti".
 - **Wishlist**: aggiungi sigari con quantità, la scheda "Wishlist" calcola il totale per riga e il totale complessivo.
 - **Recensioni AI**: dalla ricerca, apri "Recensione" su un sigaro per generare (o rigenerare) una sintesi in italiano delle opinioni trovate sulle fonti configurate in `REVIEW_SOURCES`, con elenco delle fonti citate.
+- **Export Excel**: da Impostazioni > "Esporta in Excel" scarichi un .xlsx con i sigari posseduti (location, tabaccheria, prezzo unitario, valore), lo storico delle fumate (durata, riaccensioni, voto) o entrambi in due fogli. API: `GET /api/export/xlsx?tipo=sigari|fumate|tutto` (richiede login).
 
 ### Configurazione necessaria per le recensioni AI
 

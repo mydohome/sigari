@@ -10,6 +10,7 @@ import {
   updateLocation,
   deleteLocation,
   fetchHaIntegration,
+  downloadExportXlsx,
 } from "../api.js";
 import { authHeaders } from "../auth.js";
 
@@ -309,6 +310,50 @@ automation:
   );
 }
 
+// Esporta in Excel i dati personali: sigari posseduti, fumate, o entrambi
+// (due fogli nello stesso file).
+function ExportExcelCard() {
+  const [inCorso, setInCorso] = useState(null);
+  const [errore, setErrore] = useState(null);
+
+  async function esporta(tipo) {
+    setInCorso(tipo);
+    setErrore(null);
+    try {
+      await downloadExportXlsx(tipo);
+    } catch (err) {
+      setErrore(err.message);
+    } finally {
+      setInCorso(null);
+    }
+  }
+
+  const voci = [
+    ["sigari", "Sigari posseduti"],
+    ["fumate", "Fumate"],
+    ["tutto", "Tutto (2 fogli)"],
+  ];
+
+  return (
+    <div className="export-excel">
+      <div className="humidor-actions">
+        {voci.map(([tipo, label]) => (
+          <button
+            key={tipo}
+            type="button"
+            className={tipo === "tutto" ? "" : "secondary"}
+            disabled={inCorso !== null}
+            onClick={() => esporta(tipo)}
+          >
+            {inCorso === tipo ? "Esporto..." : `Esporta ${label}`}
+          </button>
+        ))}
+      </div>
+      {errore && <p className="error-msg small">{errore}</p>}
+    </div>
+  );
+}
+
 export default function SettingsTab() {
   const [backups, setBackups] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -453,6 +498,13 @@ export default function SettingsTab() {
         (mai da questa app), così funziona anche se il server resta in una rete separata.
       </p>
       <HaIntegrationCard />
+
+      <h2>Esporta in Excel</h2>
+      <p className="status-msg small">
+        Scarica un file .xlsx con i sigari che possiedi ora (con location, tabaccheria, prezzo e
+        valore) e/o lo storico completo delle fumate (con durata, riaccensioni e voto).
+      </p>
+      <ExportExcelCard />
 
       <h2>Backup humidor</h2>
       <p className="status-msg small">
