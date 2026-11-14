@@ -9,7 +9,8 @@ services:
     volumes:
       - db_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      # Solo dal server stesso (psql, tunnel SSH): il database non deve essere raggiungibile dalla rete
+      - "127.0.0.1:5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-tabacchi}"]
       interval: 5s
@@ -37,7 +38,8 @@ services:
       REVIEW_SOURCES: ${REVIEW_SOURCES:-gustotabacco.it,accademiafumolento.forumfree.it,rollingtobacco.it,bottegadelfumatore.com,sigarietabacchi.it}
       REVIEW_MODEL: ${REVIEW_MODEL:-claude-haiku-4-5-20251001}
     ports:
-      - "4000:4000"
+      # Gli utenti passano da nginx (porta 8080); 4000 serve solo ai controlli di salute sul server
+      - "127.0.0.1:4000:4000"
     volumes:
       - backend_downloads:/app/downloads
 
@@ -45,7 +47,8 @@ services:
     build: ./frontend
     restart: unless-stopped
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     ports:
       - "8080:80"
 

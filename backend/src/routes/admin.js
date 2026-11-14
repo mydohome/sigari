@@ -4,13 +4,14 @@ const { parse } = require("csv-parse/sync");
 const pool = require("../db/pool");
 const { runScrapeCycle } = require("../scraper");
 const { classificaProvenienza } = require("../data/provenienze");
+const { stessoSegreto } = require("../middleware/secrets");
 
 const router = express.Router();
-const upload = multer({ storage: multer.memoryStorage() });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
 function requireAdmin(req, res, next) {
   const token = req.header("x-admin-token");
-  if (!process.env.ADMIN_TOKEN || token !== process.env.ADMIN_TOKEN) {
+  if (!stessoSegreto(token, process.env.ADMIN_TOKEN)) {
     return res.status(401).json({ error: "Token amministrativo mancante o non valido." });
   }
   next();

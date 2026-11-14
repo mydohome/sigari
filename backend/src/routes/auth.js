@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const pool = require("../db/pool");
 const { requireAuth } = require("../middleware/auth");
+const { creaLimite } = require("../middleware/rateLimit");
 
 const router = express.Router();
 
@@ -11,8 +12,22 @@ function isValidEmail(email) {
 }
 
 function signToken(userId) {
-  return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: "30d" });
+  return jwt.sign({ userId }, process.env.JWT_SECRET, { algorithm: "HS256", expiresIn: "30d" });
 }
+
+// Freno ai tentativi di indovinare la password: per indirizzo IP e per singolo account
+const limitePerIp = creaLimite({
+  finestraMs: 15 * 60 * 1000,
+  max: 30,
+  chiave: (req) => req.ip,
+  messaggio: "Troppi tentativi di accesso. Riprova tra qualche minuto.",
+});
+const limitePerAccount = creaLimite({
+  finestraMs: 15 * 60 * 1000,
+  max: 10,
+  chiave: (req) => (typeof req.body?.email === "string" ? req.body.email.toLowerCase().trim() : null),
+  messaggio: "Troppi tentativi per questo account. Riprova tra qualche minuto.",
+});
 
 // GET /api/auth/registration-open - la registrazione e' consentita solo finche'
 // non esiste ancora nessun utente (app ad uso personale/familiare).
@@ -26,7 +41,7 @@ router.get("/registration-open", async (_req, res) => {
   }
 });
 
-router.post("/register", async (req, res) => {
+router.post("/register", limitePerIp, async (req, res) => {
   const { email, password } = req.body || {};
 
   if (!email || !isValidEmail(email)) {
@@ -64,7 +79,7 @@ router.post("/register", async (req, res) => {
   }
 });
 
-router.post("/login", async (req, res) => {
+router.post("/login", limitePerIp, limitePerAccount, async (req, res) => {
   const { email, password } = req.body || {};
   if (!email || !password) {
     return res.status(400).json({ error: "Email e password sono richieste." });

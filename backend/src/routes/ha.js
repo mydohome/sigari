@@ -1,5 +1,6 @@
 const express = require("express");
 const pool = require("../db/pool");
+const { stessoSegreto } = require("../middleware/secrets");
 
 const router = express.Router();
 
@@ -11,7 +12,7 @@ const router = express.Router();
 // LAN interna.
 function requireApiKey(req, res, next) {
   const key = req.header("x-api-key");
-  if (!process.env.HA_API_KEY || key !== process.env.HA_API_KEY) {
+  if (!stessoSegreto(key, process.env.HA_API_KEY)) {
     return res.status(401).json({ error: "API key mancante o non valida." });
   }
   next();
