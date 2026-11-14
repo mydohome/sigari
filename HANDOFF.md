@@ -9,7 +9,8 @@ Portale web (Docker) per monitorare i prezzi dei **sigari** in Italia, con ricer
 autocompletamento, preferiti (con tag), wishlist (con calcolo totale), e recensioni
 generate via AI a partire da fonti italiane selezionate.
 
-Stack: Node.js/Express + PostgreSQL (backend), React/Vite (frontend), tutto in Docker Compose.
+Stack: Node.js/Express + PostgreSQL (backend), React 18 + TypeScript + Tailwind v4 + Vite (frontend,
+grafica ripresa da `sigari_v2`), nginx davanti a tutto, in Docker Compose.
 
 ## Decisioni chiave prese durante lo sviluppo
 
@@ -79,19 +80,37 @@ backend/
       export.js         export Excel (.xlsx) di sigari posseduti e fumate
 frontend/
   src/
-    auth.js              gestione token JWT in localStorage
-    api.js                 tutte le chiamate al backend
-    App.jsx                 tab Ricerca/Preferiti/Wishlist + auth
-    components/
-      SearchBar.jsx (autocomplete), ResultsTable.jsx (azioni preferito/wishlist/recensione),
-      ReviewPanel.jsx, FavoritesTab.jsx, WishlistTab.jsx, AuthBar.jsx
-      HumidorTab.jsx, DashboardFumateTab.jsx, PurchaseModal.jsx, FumataModal.jsx,
-      GlobalActions.jsx (pulsanti rapidi acquisto/fumata), PriceHistoryModal.jsx,
-      SettingsTab.jsx (location, Home Assistant, export Excel, backup), WikiTab.jsx
-```
-
+    App.tsx                  accesso (AuthScreen), caricamento dati, schede, modali, notifiche
+    lib/api.ts               sessione (token in localStorage) + chiamate al backend + conversione nelle forme
+                             dei tipi: l'interfaccia non conosce i nomi delle colonne/risposte del backend
+    types/cigar.ts           tipi (Product, HumidorItem, Fumata, TastingReview, HumidorStats, ...)
+    components/              DashboardTab, HumidorTab, PricesTab, FumateTab, TastingNotesTab, WishlistTab,
+                             WikiTab, SettingsTab, Navbar, MobileBottomNav, ProductPicker, ui.ts (classi comuni)
+    components/modals/       FumataModal, PurchaseModal, EditHumidorItemModal, PriceHistoryModal, AIReviewModal
+  nginx.conf, security-headers.conf, Dockerfile   web server (gzip, cache, CSP, proxy /api con timeout lungo)
 Nota: la struttura sopra e' un riepilogo, non esaustivo; per l'elenco completo vedi `backend/src` e
 `frontend/src/components`.
+
+## Decisioni della nuova interfaccia (da non rompere)
+
+- **Nessun dato inventato**: orari, stelle, forza/combustione/tiraggio sono facoltativi e partono vuoti;
+  la durata media compare solo con almeno 5 fumate cronometrate (`MIN_CAMPIONI_DURATA` in `humidor.js`).
+- **Durata fumata**: `backend/src/db/durata.js` (`sqlDurataMinuti`) e' l'unica definizione; se fine < inizio la
+  fumata e' passata oltre la mezzanotte, ma solo fino a 6 ore (oltre: errore di digitazione, durata ignota).
+- **Fumate e lotti**: `humidor_fumate.humidor_item_id` e' nullo per i sigari fumati fuori humidor e diventa
+  nullo (non si cancella) se il lotto viene eliminato: lo storico e le statistiche restano.
+  Modificando la quantita' di una fumata la giacenza del lotto si riallinea.
+- **Wishlist**: la quantita' conta le **confezioni** (totale = prezzo confezione x quantita'); passando
+  all'acquisto diventa quantita' x pezzi per confezione.
+- **Ricerca prezzi**: solo i prodotti presenti nell'ultimo listino; ordinamento e filtri sono lato server
+  (`ORDINAMENTI` in `routes/prices.js`), il frontend carica a pagine (max 500 righe per richiesta).
+- **Statistiche** (`GET /api/humidor/stats`): serie a 12 slot con zeri, plusvalore a listino calcolato dal server,
+  distribuzioni per origine e location. I campi `NUMERIC` escono come numeri (parser in `db/pool.js`).
+- **Sicurezza**: JWT HS256 e `JWT_SECRET` obbligatorio all'avvio, limite ai tentativi di login, CORS chiuso,
+  confronti a tempo costante per `ADMIN_TOKEN`/`HA_API_KEY`, errori sempre in JSON. DB e porta 4000 sono
+  legati a 127.0.0.1 nel compose; nginx e' l'unico ingresso (CSP senza CDN: font e immagini sono nella build).
+- **Provare in locale su OneDrive**: la cartella `dist` puo' generare duplicati (`assets 2`) per i conflitti di
+  sincronizzazione; per provare la build usa `vite build --outDir` fuori dalla cartella sincronizzata.
 
 ## Variabili d'ambiente richieste (.env)
 
@@ -123,8 +142,8 @@ sono state aggiunte (dettagli nel `README.md`):
   richiede login e riguarda solo l'utente loggato. Genera con la libreria `xlsx` (gia' dipendenza) un
   file con i fogli "Sigari posseduti" (solo lotti con quantita' rimanente > 0, con totali) e "Fumate"
   (storico completo, con durata calcolata e voto). I pulsanti sono in Impostazioni > "Esporta in Excel".
-  Il download lato frontend passa da `fetch` con header di autenticazione (`downloadExportXlsx` in
-  `api.js`), perche' un semplice link non invierebbe il token JWT.
+  Il download lato frontend passa da `fetch` con header di autenticazione (`esportaExcel` in
+  `lib/api.ts`), perche' un semplice link non invierebbe il token JWT.
 - Deploy/aggiornamento: `./update.sh` sul server (mostra gli aggiornamenti e chiede conferma).
 
 ## Cosa NON è ancora stato fatto / possibili prossimi passi

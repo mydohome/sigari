@@ -5,6 +5,20 @@ ogni settimana.
 
 ## Funzionalità
 
+L'interfaccia (tema scuro "club del fumo", Dashboard con KPI e grafici, barra di navigazione adattiva
+desktop/telefono) riprende la grafica di `sigari_v2`; i dati restano quelli di Sigari (Postgres, login,
+listini FIT). Schede: **Dashboard**, **Humidor**, **Prezzi FIT**, **Fumate**, **Degustazione**,
+**Wishlist** (con i Preferiti), **Guida**, **Impostazioni**.
+
+- **Dashboard**: giacenza, valore pagato e **plusvalore** rispetto ai listini di oggi, medie di consumo
+  (settimana/mese/anno), durata media delle fumate (dopo 5 sessioni cronometrate), grafico di consumo a 12
+  settimane o 12 mesi, marche più fumate, ripartizione per origine, ultime fumate.
+- **Prezzi FIT**: ricerca sul listino (marca, formato, codice ADM), ordinamento per nome, prezzo o variazione,
+  filtro per origine e «solo prezzi variati negli ultimi 180 giorni», **storico dei prezzi** in un grafico a gradini.
+- **Fumate**: orari di inizio/fine facoltativi (durata calcolata, anche oltre la mezzanotte), riaccensioni,
+  voto in stelle, abbinamento e note; si possono **modificare** dopo la registrazione e si possono registrare
+  anche sigari non presenti in humidor. Annullando una fumata la giacenza torna al lotto.
+- **Degustazione**: scheda sensoriale per sigaro (aromi, forza, combustione, tiraggio, abbinamento consigliato).
 - **Ricerca con autocompletamento** sulle marche di sigari.
 - **Login/registrazione multi-utente** (JWT). Necessario per usare preferiti, wishlist e generare recensioni.
 - **Preferiti**: aggiungi un sigaro dalla ricerca (☆), assegnagli un tag personale (es. "da riprovare"), gestiscili nella scheda "Preferiti".
@@ -75,9 +89,10 @@ cp .env.example .env
 docker compose up --build
 ```
 
-- Frontend (ricerca): http://localhost:8080
-- API backend: http://localhost:4000/api
-- Postgres: porta 5432
+- Frontend: http://localhost:8080 (nginx: serve l'interfaccia e inoltra `/api` al backend)
+- API backend: http://localhost:4000/api — raggiungibile **solo dal server stesso** (le richieste degli
+  utenti passano da nginx, porta 8080)
+- Postgres: porta 5432, **solo dal server stesso** (per accedere da fuori usa un tunnel SSH)
 
 Al primo avvio, se `SCRAPE_ON_BOOT=true` (default), il backend esegue subito un primo
 ciclo di scraping. Successivamente lo scraping gira in automatico secondo l'espressione
@@ -110,9 +125,14 @@ backend/
     routes/
       prices.js            API pubbliche di ricerca
       admin.js              stato scraping, avvio manuale, import CSV
-frontend/
+frontend/                 React 18 + TypeScript + Tailwind CSS v4 (Vite), icone lucide, animazioni motion
   src/
-    App.jsx, components/    pagina di ricerca React
+    App.tsx                 accesso, caricamento dati, schede e modali
+    lib/api.ts              tutte le chiamate al backend + conversione nelle forme usate dall'interfaccia
+    types/cigar.ts          tipi dei dati
+    components/             una scheda per file (DashboardTab, HumidorTab, PricesTab, FumateTab, ...), modali in modals/
+    data/wikiData.ts        contenuti della Guida
+  nginx.conf, security-headers.conf   web server: compressione, cache, intestazioni di sicurezza, proxy /api
 ```
 
 ## API principali

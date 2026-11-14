@@ -2,6 +2,7 @@ const express = require("express");
 const XLSX = require("xlsx");
 const pool = require("../db/pool");
 const { requireAuth } = require("../middleware/auth");
+const { sqlDurataMinuti } = require("../db/durata");
 
 const router = express.Router();
 router.use(requireAuth);
@@ -15,17 +16,6 @@ function toDate(str) {
   if (!str) return null;
   const [y, m, d] = String(str).slice(0, 10).split("-").map(Number);
   return new Date(Date.UTC(y, m - 1, d));
-}
-
-function minutiDaOra(ora) {
-  const [h, m] = String(ora).split(":");
-  return Number(h) * 60 + Number(m);
-}
-
-function durataMinuti(inizio, fine) {
-  if (!inizio || !fine) return null;
-  const diff = minutiDaOra(fine) - minutiDaOra(inizio);
-  return diff >= 0 ? diff : null;
 }
 
 const hhmm = (ora) => (ora ? String(ora).slice(0, 5) : null);
@@ -106,7 +96,8 @@ async function foglioFumate(userId) {
     `SELECT f.data_fumata, f.quantita, f.ora_inizio, f.ora_fine, f.riaccensioni,
             p.marca, p.categoria, p.formato, p.provenienza,
             l.nome AS location_nome, s.nome AS shop_nome, hi.prezzo_acquisto,
-            r.stelle, r.descrizione
+            COALESCE(f.stelle, r.stelle) AS stelle, COALESCE(f.note, r.descrizione) AS descrizione,
+            f.abbinamento, (${sqlDurataMinuti("f.")})::int AS durata_minuti
      FROM humidor_fumate f
      JOIN products p ON p.id = f.product_id
      LEFT JOIN humidor_items hi ON hi.id = f.humidor_item_id
@@ -121,23 +112,23 @@ async function foglioFumate(userId) {
   const intestazioni = [
     "Data", "Marca", "Categoria", "Formato", "Provenienza", "Quantità", "Ora inizio",
     "Ora fine", "Durata (min)", "Riaccensioni", "Location", "Tabaccheria",
-    "Prezzo unitario", "Voto (stelle)", "Recensione",
+    "Prezzo unitario", "Voto (stelle)", "Abbinamento", "Note",
   ];
   let totQta = 0;
   const righe = rows.map((r) => {
     totQta += r.quantita;
     return [
       toDate(r.data_fumata), r.marca, r.categoria, r.formato, r.provenienza, r.quantita,
-      hhmm(r.ora_inizio), hhmm(r.ora_fine), durataMinuti(r.ora_inizio, r.ora_fine),
+      hhmm(r.ora_inizio), hhmm(r.ora_fine), r.durata_minuti,
       r.riaccensioni, r.location_nome, r.shop_nome,
       r.prezzo_acquisto != null ? Number(r.prezzo_acquisto) : null,
-      r.stelle, r.descrizione,
+      r.stelle, r.abbinamento, r.descrizione,
     ];
   });
 
   return creaFoglio(intestazioni, righe, {
     formati: { 0: FMT_DATA, 12: FMT_EURO },
-    larghezze: [13, 24, 14, 22, 14, 10, 11, 10, 13, 13, 14, 24, 15, 13, 40],
+    larghezze: [13, 24, 14, 22, 14, 10, 11, 10, 13, 13, 14, 24, 15, 13, 24, 40],
     totali: ["TOTALE", null, null, null, null, totQta],
   });
 }

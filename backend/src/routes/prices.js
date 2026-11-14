@@ -26,11 +26,50 @@ router.get("/autocomplete", async (req, res) => {
   }
 });
 
-// GET /api/prices/search?q=marlboro&categoria=Sigarette&marca=Cohiba&provenienza=Cuba&page=1&pageSize=20
+// Prezzo di riferimento per la variazione a 180 giorni: quello in vigore 180 giorni fa o,
+// per i prodotti piu' recenti, il primo prezzo noto.
+const LATERAL_PREZZO_BASE = `
+  LEFT JOIN LATERAL (
+    SELECT pr.prezzo_singolo
+    FROM prices pr
+    WHERE pr.product_id = p.id
+    ORDER BY (pr.valido_dal <= CURRENT_DATE - 180) DESC,
+             CASE WHEN pr.valido_dal <= CURRENT_DATE - 180 THEN pr.valido_dal END DESC NULLS LAST,
+             pr.valido_dal ASC
+    LIMIT 1
+  ) base ON true`;
+
+// Ordinamento nella query interna (che sceglie la pagina) e in quella esterna (che la rimette in ordine)
+const ORDINAMENTI = {
+  marca: { interno: "p.marca ASC, p.id ASC", esterno: "page.marca ASC, page.product_id ASC" },
+  prezzo_asc: {
+    interno: "latest.prezzo_singolo ASC NULLS LAST, p.marca ASC, p.id ASC",
+    esterno: "page.prezzo_singolo ASC NULLS LAST, page.marca ASC, page.product_id ASC",
+  },
+  prezzo_desc: {
+    interno: "latest.prezzo_singolo DESC NULLS LAST, p.marca ASC, p.id ASC",
+    esterno: "page.prezzo_singolo DESC NULLS LAST, page.marca ASC, page.product_id ASC",
+  },
+  variazione: {
+    interno: "variazione_180gg DESC NULLS LAST, p.marca ASC, p.id ASC",
+    esterno: "page.variazione_180gg DESC NULLS LAST, page.marca ASC, page.product_id ASC",
+  },
+};
+
+// Nei pattern LIKE i caratteri \ % _ digitati dall'utente valgono come testo, non come jolly
+function escapeLike(testo) {
+  return testo.replace(/[\\%_]/g, (c) => `\\${c}`);
+}
+
+// GET /api/prices/search?q=cohiba&marca=Cohiba&provenienza=Cuba&sort=prezzo_desc&variati=1&page=1&pageSize=24
+//   sort: marca (default) | prezzo_asc | prezzo_desc | variazione
+//   variati=1: solo i prodotti il cui prezzo e' cambiato negli ultimi 180 giorni
 router.get("/search", optionalAuth, async (req, res) => {
   const { q = "", categoria = "", marca = "", provenienza = "", page = "1", pageSize = "20" } = req.query;
+  const ordine = ORDINAMENTI[req.query.sort] || ORDINAMENTI.marca;
+  const soloVariati = req.query.variati === "1";
 
-  const limit = Math.min(parseInt(pageSize, 10) || 20, 100);
+  const limit = Math.min(Math.max(parseInt(pageSize, 10) || 20, 1), 500);
   const offset = (Math.max(parseInt(page, 10) || 1, 1) - 1) * limit;
 
   // Solo i prodotti presenti nell'ultimo listino: con lo storico in archivio ci
@@ -39,8 +78,11 @@ router.get("/search", optionalAuth, async (req, res) => {
   const params = [];
 
   if (q.trim()) {
-    params.push(`%${q.trim().toLowerCase()}%`);
-    conditions.push(`LOWER(p.marca) LIKE $${params.length}`);
+    params.push(`%${escapeLike(q.trim().toLowerCase())}%`);
+    const idx = params.length;
+    conditions.push(
+      `(LOWER(p.marca) LIKE $${idx} OR LOWER(COALESCE(p.formato, '')) LIKE $${idx} OR LOWER(COALESCE(p.codice_prodotto, '')) LIKE $${idx})`
+    );
   }
   if (marca.trim()) {
     params.push(marca.trim());
@@ -55,15 +97,18 @@ router.get("/search", optionalAuth, async (req, res) => {
     conditions.push(`p.provenienza = $${params.length}`);
   }
 
-  const whereClause = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+  if (soloVariati) {
+    conditions.push("base.prezzo_singolo IS NOT NULL AND latest.prezzo_singolo IS DISTINCT FROM base.prezzo_singolo");
+  }
+
+  const whereClause = `WHERE ${conditions.join(" AND ")}`;
 
   params.push(limit);
   const limitIdx = params.length;
   params.push(offset);
   const offsetIdx = params.length;
 
-  // La variazione (ultimo cambio di prezzo e prezzo precedente) e' calcolata
-  // solo sulla pagina di risultati, non su tutto il listino.
+  // L'ultimo cambio di prezzo e' calcolato solo sulla pagina di risultati, non su tutto il listino.
   const sql = `
     SELECT page.*, variazione.variazione_il, variazione.prezzo_precedente
     FROM (
@@ -74,10 +119,13 @@ router.get("/search", optionalAuth, async (req, res) => {
         p.formato,
         p.provenienza,
         p.pezzi_per_confezione,
+        p.codice_prodotto,
         latest.prezzo_confezione,
         latest.prezzo_singolo,
         latest.valido_dal,
-        latest.fonte_url
+        latest.fonte_url,
+        CASE WHEN base.prezzo_singolo IS NOT NULL AND latest.prezzo_singolo IS NOT NULL
+             THEN latest.prezzo_singolo - base.prezzo_singolo END AS variazione_180gg
       FROM products p
       JOIN LATERAL (
         SELECT prezzo_confezione, prezzo_singolo, valido_dal, fonte_url
@@ -86,8 +134,9 @@ router.get("/search", optionalAuth, async (req, res) => {
         ORDER BY pr.valido_dal DESC
         LIMIT 1
       ) latest ON true
+      ${LATERAL_PREZZO_BASE}
       ${whereClause}
-      ORDER BY p.marca ASC, p.id ASC
+      ORDER BY ${ordine.interno}
       LIMIT $${limitIdx} OFFSET $${offsetIdx}
     ) page
     LEFT JOIN LATERAL (
@@ -102,11 +151,23 @@ router.get("/search", optionalAuth, async (req, res) => {
       ORDER BY storico.valido_dal DESC
       LIMIT 1
     ) variazione ON true
-    ORDER BY page.marca ASC, page.product_id ASC;
+    ORDER BY ${ordine.esterno};
   `;
 
+  const countSql = `
+    SELECT COUNT(*)::int AS totale
+    FROM products p
+    JOIN LATERAL (
+      SELECT prezzo_singolo, valido_dal FROM prices pr WHERE pr.product_id = p.id ORDER BY pr.valido_dal DESC LIMIT 1
+    ) latest ON true
+    ${soloVariati ? LATERAL_PREZZO_BASE : ""}
+    ${whereClause}`;
+
   try {
-    const { rows } = await pool.query(sql, params);
+    const [{ rows }, conteggio] = await Promise.all([
+      pool.query(sql, params),
+      pool.query(countSql, params.slice(0, params.length - 2)),
+    ]);
 
     let preferitiIds = new Set();
     let wishlistIds = new Set();
@@ -133,7 +194,7 @@ router.get("/search", optionalAuth, async (req, res) => {
       in_wishlist: wishlistIds.has(r.product_id),
     }));
 
-    res.json({ results, page: Number(page), pageSize: limit });
+    res.json({ results, totale: conteggio.rows[0].totale, page: Number(page), pageSize: limit });
   } catch (err) {
     console.error("Errore ricerca prezzi:", err);
     res.status(500).json({ error: "Errore durante la ricerca." });

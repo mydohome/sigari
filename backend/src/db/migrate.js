@@ -174,6 +174,30 @@ ALTER TABLE humidor_fumate ADD COLUMN IF NOT EXISTS ora_inizio TIME;
 ALTER TABLE humidor_fumate ADD COLUMN IF NOT EXISTS ora_fine TIME;
 ALTER TABLE humidor_fumate ADD COLUMN IF NOT EXISTS riaccensioni INTEGER;
 
+-- Valutazione, appunti e abbinamento della singola sessione di fumo
+ALTER TABLE humidor_fumate ADD COLUMN IF NOT EXISTS stelle SMALLINT CHECK (stelle BETWEEN 1 AND 5);
+ALTER TABLE humidor_fumate ADD COLUMN IF NOT EXISTS note TEXT;
+ALTER TABLE humidor_fumate ADD COLUMN IF NOT EXISTS abbinamento TEXT;
+
+CREATE INDEX IF NOT EXISTS idx_humidor_fumate_user_product ON humidor_fumate (user_id, product_id);
+CREATE INDEX IF NOT EXISTS idx_humidor_fumate_item ON humidor_fumate (humidor_item_id);
+
+-- Una fumata puo' riguardare un sigaro non presente in humidor (humidor_item_id nullo) e,
+-- se il lotto viene eliminato, lo storico delle fumate resta: prima la cancellazione del
+-- lotto portava via anche tutte le sue fumate e quindi le statistiche.
+ALTER TABLE humidor_fumate ALTER COLUMN humidor_item_id DROP NOT NULL;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'humidor_fumate_humidor_item_id_fkey' AND confdeltype <> 'n'
+  ) THEN
+    ALTER TABLE humidor_fumate DROP CONSTRAINT humidor_fumate_humidor_item_id_fkey;
+    ALTER TABLE humidor_fumate ADD CONSTRAINT humidor_fumate_humidor_item_id_fkey
+      FOREIGN KEY (humidor_item_id) REFERENCES humidor_items(id) ON DELETE SET NULL;
+  END IF;
+END $$;
+
 CREATE TABLE IF NOT EXISTS humidor_reviews (
   id SERIAL PRIMARY KEY,
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -183,6 +207,13 @@ CREATE TABLE IF NOT EXISTS humidor_reviews (
   updated_at TIMESTAMP NOT NULL DEFAULT now(),
   UNIQUE (user_id, product_id)
 );
+
+-- Scheda sensoriale: aromi percepiti, forza, combustione, tiraggio e abbinamento consigliato
+ALTER TABLE humidor_reviews ADD COLUMN IF NOT EXISTS aromi TEXT[] NOT NULL DEFAULT '{}';
+ALTER TABLE humidor_reviews ADD COLUMN IF NOT EXISTS forza TEXT;
+ALTER TABLE humidor_reviews ADD COLUMN IF NOT EXISTS combustione TEXT;
+ALTER TABLE humidor_reviews ADD COLUMN IF NOT EXISTS tiraggio TEXT;
+ALTER TABLE humidor_reviews ADD COLUMN IF NOT EXISTS abbinamento_consigliato TEXT;
 `;
 
 // Classifica la provenienza dei prodotti che non l'hanno ancora (nuovi prodotti
