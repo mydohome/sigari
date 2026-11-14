@@ -4,8 +4,8 @@
   "description": "Prezzi, humidor e fumate dei tuoi sigari",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#241209",
-  "theme_color": "#241209",
+  "background_color": "#120f0e",
+  "theme_color": "#14100e",
   "orientation": "portrait",
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
